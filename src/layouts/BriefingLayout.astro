@@ -1,0 +1,52 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import DateNavigation from '../components/DateNavigation.astro';
+import ItemCard from '../components/ItemCard.astro';
+import { CATEGORY_BY_ID } from '../lib/categories.ts';
+import { dailyPath } from '../lib/urls.ts';
+import { formatDateTime } from '../lib/format.ts';
+import { type SiteContent } from '../lib/content.ts';
+import { render } from 'astro:content';
+
+interface Props {
+  site: SiteContent;
+  briefingId: string;
+}
+const { site, briefingId } = Astro.props;
+const briefing = site.briefingsById.get(briefingId)!;
+const category = CATEGORY_BY_ID[briefing.data.category];
+const items = briefing.data.item_ids.map((id) => site.itemsById.get(id)!);
+
+const { Content } = await render(briefing);
+const updated = briefing.data.updated_at ?? briefing.data.published_at;
+---
+
+<BaseLayout
+  title={briefing.data.title}
+  description={`DailyInfo ${category.label} 日报（${briefing.data.date}）：${briefing.data.item_ids.length} 条条目的摘要与导航。`}
+  path={`/daily/${briefing.data.date}/${category.slug}/`}
+  type="article"
+  publishedTime={briefing.data.published_at}
+  modifiedTime={updated}
+>
+  <article class="prose" style="margin-block: 2rem;">
+    <a class="backlink" href={dailyPath(briefing.data.date)}>← {briefing.data.date} 日报</a>
+    <h1>{briefing.data.title}</h1>
+    <p style="color:var(--text-soft);font-size:0.85rem;">
+      {formatDateTime(briefing.data.published_at)} 发布
+      {briefing.data.updated_at && ` · ${formatDateTime(briefing.data.updated_at)} 更新`}
+    </p>
+    <DateNavigation dates={site.dates} current={briefing.data.date} />
+
+    <h2 class="section-title">Structured Items</h2>
+    {items.length === 0 && <p class="empty-note">本日报无结构化条目。</p>}
+    {items.map((item) => (
+      <ItemCard item={item} showCategory={false} />
+    ))}
+
+    <h2 class="section-title">完整日报正文</h2>
+    <div class="markdown-body">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>

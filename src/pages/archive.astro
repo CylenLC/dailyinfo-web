@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { CATEGORIES } from '../lib/categories.ts';
+import { briefingPath, dailyPath } from '../lib/urls.ts';
+import { loadSiteContent } from '../lib/content.ts';
+
+const site = await loadSiteContent();
+
+// Archive rows: one row per (date, category) with a briefing that day.
+// Derived entirely from Content Collections — no hand-maintained date list.
+const rowsByDate = site.dates.map((date) => {
+  const briefings = site.briefingsByDate.get(date) ?? [];
+  return { date, briefings };
+});
+---
+
+<BaseLayout
+  title="Archive"
+  description="DailyInfo 历史日报归档，按日期与分类组织。"
+  path="/archive/"
+>
+  <div class="prose" style="margin-block: 2rem;">
+    <h1>Archive</h1>
+    <p style="color:var(--text-soft);font-size:0.9rem;">
+      按日期组织的历史发布内容，共 {site.dates.length} 个发布日期。
+    </p>
+
+    {rowsByDate.map(({ date, briefings }) => (
+      <section style="margin-top:2.25rem;">
+        <h2 class="archive-date">
+          <a href={dailyPath(date)}>{date}</a>
+        </h2>
+        <table class="archive-table">
+          <thead>
+            <tr>
+              <th scope="col">Category</th>
+              <th scope="col">Items</th>
+            </tr>
+          </thead>
+          <tbody>
+            {CATEGORIES.map((category) => {
+              const briefing = briefings.find((b) => b.data.category === category.id);
+              const count = briefing ? briefing.data.item_ids.length : 0;
+              if (!briefing) {
+                return (
+                  <tr>
+                    <td style="color:var(--text-faint)">{category.label}</td>
+                    <td style="color:var(--text-faint)">0</td>
+                  </tr>
+                );
+              }
+              return (
+                <tr>
+                  <td>
+                    <a href={briefingPath(date, category.id)}>{category.label}</a>
+                  </td>
+                  <td>{count}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
+    ))}
+  </div>
+</BaseLayout>

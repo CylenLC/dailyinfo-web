@@ -1,0 +1,32 @@
+---
+import { CATEGORY_BY_ID } from '../lib/categories.ts';
+import { itemPath } from '../lib/urls.ts';
+import { formatDate, truncate } from '../lib/format.ts';
+import type { ItemEntry } from '../lib/content.ts';
+import SourceBadge from './SourceBadge.astro';
+import TagList from './TagList.astro';
+
+interface Props {
+  item: ItemEntry;
+  /** Show the category badge (default true on mixed-category lists). */
+  showCategory?: boolean;
+}
+const { item, showCategory = true } = Astro.props;
+
+const category = CATEGORY_BY_ID[item.data.category];
+const href = itemPath(item.data.category, item.data.id);
+---
+
+<article class="item-card">
+  <a href={href}>
+    <div class="item-card__meta">
+      {showCategory && <SourceBadge category={category} />}
+      <span>{item.data.source.name}</span>
+      <span aria-hidden="true">·</span>
+      <time datetime={item.data.published_at}>{formatDate(item.data.published_at)}</time>
+    </div>
+    <h3 class="item-card__title">{item.data.title}</h3>
+    <p class="item-card__summary">{truncate(item.data.summary, 220)}</p>
+  </a>
+  {item.data.tags.length > 0 && <TagList tags={item.data.tags} />}
+</article>

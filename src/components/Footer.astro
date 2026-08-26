@@ -1,0 +1,31 @@
+---
+import { SITE, ATTRIBUTION } from '../lib/site.ts';
+import { CATEGORIES } from '../lib/categories.ts';
+import { categoryPath, feedPath } from '../lib/urls.ts';
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <p class="site-footer__notice">{ATTRIBUTION}</p>
+    <nav class="site-footer__links" aria-label="页脚导航">
+      <a href="/">首页</a>
+      {CATEGORIES.map((category) => (
+        <a href={categoryPath(category.id)}>{category.label}</a>
+      ))}
+      <a href="/archive/">Archive</a>
+    </nav>
+    <p>
+      <a href="/feed.xml">RSS（全部）</a>
+      {' · '}
+      {CATEGORIES.map((category, index) => (
+        <>
+          {index > 0 && ' · '}
+          <a href={feedPath(category.id)}>{category.label} RSS</a>
+        </>
+      ))}
+    </p>
+    <p>
+      {SITE.name} — {SITE.tagline}。内容由自动化流水线生成的摘要组成，仅用于研究导航。
+    </p>
+  </div>
+</footer>

@@ -1,0 +1,10 @@
+---
+import type { Category } from '../lib/categories.ts';
+
+interface Props {
+  category: Category;
+}
+const { category } = Astro.props;
+---
+
+<span class="badge badge--category">{category.label}</span>

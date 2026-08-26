@@ -1,0 +1,25 @@
+---
+import { CATEGORIES } from '../lib/categories.ts';
+import { categoryPath } from '../lib/urls.ts';
+
+interface Props {
+  /** Highlight the category matching this root-relative path (e.g. '/papers/'). */
+  currentPath?: string;
+}
+const { currentPath } = Astro.props;
+---
+
+<nav class="category-nav" aria-label="分类导航">
+  <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>Latest</a>
+  {CATEGORIES.map((category) => (
+    <a
+      href={categoryPath(category.id)}
+      aria-current={currentPath === categoryPath(category.id) ? 'page' : undefined}
+    >
+      {category.label}
+    </a>
+  ))}
+  <a href="/archive/" aria-current={currentPath === '/archive/' ? 'page' : undefined}>
+    Archive
+  </a>
+</nav>

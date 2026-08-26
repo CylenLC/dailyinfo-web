@@ -1,0 +1,495 @@
+/* DailyInfo Web — global styles.
+ *
+ * Design direction: research publication, content first.
+ * Quiet visual hierarchy, no dashboards, no gradients, no glassmorphism.
+ * Mobile-first single column; desktop widens the chrome while prose width
+ * stays constrained by --prose-max.
+ */
+
+:root {
+  --bg: #faf9f7;
+  --bg-soft: #f1efeb;
+  --text: #1f2428;
+  --text-soft: #5a6470;
+  --text-faint: #8a94a0;
+  --accent: #175e73;
+  --accent-soft: #e3eef1;
+  --border: #e3e0da;
+  --card-bg: #ffffff;
+  --code-bg: #f1efeb;
+  --prose-max: 44rem;
+  --wide-max: 72rem;
+}
+
+html[data-theme='dark'] {
+  --bg: #16181c;
+  --bg-soft: #1e2126;
+  --text: #e6e8ea;
+  --text-soft: #a8b2bb;
+  --text-faint: #78828c;
+  --accent: #7cc3d8;
+  --accent-soft: #1d2c33;
+  --border: #2c3138;
+  --card-bg: #1e2126;
+  --code-bg: #23262c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    ui-serif, Georgia, 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', serif;
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+}
+
+main {
+  flex: 1;
+  width: 100%;
+}
+
+/* ---------- layout primitives ---------- */
+
+.container {
+  width: 100%;
+  max-width: var(--wide-max);
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+.prose {
+  max-width: var(--prose-max);
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-inline: 2rem;
+  }
+}
+
+/* ---------- typography ---------- */
+
+h1,
+h2,
+h3,
+h4 {
+  font-family:
+    system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
+  line-height: 1.3;
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 0 0 0.75rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  margin: 2rem 0 0.75rem;
+}
+
+h3 {
+  font-size: 1.05rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+p {
+  margin: 0 0 1rem;
+  overflow-wrap: break-word;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+code {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  background: var(--code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  background: var(--code-bg);
+  padding: 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.25rem 1rem;
+  border-inline-start: 3px solid var(--border);
+  color: var(--text-soft);
+}
+
+/* Long unbroken strings (URLs, ids) must never break layout. */
+
+h1,
+h2,
+h3,
+h4,
+p,
+li,
+dd,
+dt,
+summary,
+figcaption,
+td,
+th {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* ---------- page chrome ---------- */
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.site-header__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.8rem;
+}
+
+.site-header__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.site-header__logo {
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.site-header__logo:hover {
+  text-decoration: none;
+  color: var(--accent);
+}
+
+.site-header__tagline {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 480px) {
+  .site-header__tagline {
+    display: none;
+  }
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 3rem;
+  padding-block: 1.5rem 2.5rem;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.site-footer__notice {
+  max-width: var(--prose-max);
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-soft);
+  margin-bottom: 1.25rem;
+}
+
+.site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ---------- category navigation ---------- */
+
+.category-nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding-block: 0.35rem;
+  scrollbar-width: none;
+}
+
+.category-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.category-nav a {
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.category-nav a:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+  text-decoration: none;
+}
+
+.category-nav a[aria-current='page'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+/* ---------- item card ---------- */
+
+.item-card {
+  display: block;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.item-card:last-child {
+  border-bottom: none;
+}
+
+.item-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  margin-bottom: 0.4rem;
+}
+
+.item-card__title {
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0 0 0.35rem;
+  color: var(--text);
+}
+
+.item-card:hover .item-card__title {
+  color: var(--accent);
+}
+
+.item-card__summary {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  margin: 0 0 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- badges & tags ---------- */
+
+.badge {
+  display: inline-block;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 0.72rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.badge--category {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tag-list li {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  background: var(--bg-soft);
+  border-radius: 3px;
+  padding: 0.1rem 0.45rem;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- sections & lists ---------- */
+
+.section-title {
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 2.25rem 0 0.5rem;
+}
+
+.section-title:first-child {
+  margin-top: 0;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem 2rem;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin: 1.25rem 0;
+}
+
+@media (min-width: 640px) {
+  .meta-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.meta-grid dt {
+  color: var(--text-faint);
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+}
+
+.meta-grid dd {
+  margin: 0 0 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- archive ---------- */
+
+.archive-date {
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 2.25rem 0 0.5rem;
+}
+
+.archive-date:first-child {
+  margin-top: 0;
+}
+
+.archive-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.archive-table th {
+  text-align: left;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.archive-table td {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.archive-table td:last-child,
+.archive-table th:last-child {
+  text-align: right;
+}
+
+/* ---------- theme toggle ---------- */
+
+.theme-toggle {
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---------- misc ---------- */
+
+.empty-note {
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0.5rem 0;
+}
+
+.backlink {
+  display: inline-block;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  color: var(--text-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

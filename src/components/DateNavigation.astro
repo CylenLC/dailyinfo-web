@@ -1,0 +1,30 @@
+---
+import { dailyPath } from '../lib/urls.ts';
+
+interface Props {
+  dates: string[];
+  current?: string;
+}
+const { dates, current } = Astro.props;
+
+if (dates.length === 0) return;
+
+const currentIndex = current ? dates.indexOf(current) : -1;
+const newer = currentIndex >= 0 ? dates[currentIndex - 1] : undefined;
+const older = currentIndex >= 0 ? dates[currentIndex + 1] : undefined;
+---
+
+<nav aria-label="日期导航">
+  <span class="meta-row" style="display:inline-flex;gap:1.25rem;font-size:0.85rem;">
+    {newer ? (
+      <a href={dailyPath(newer)}>← {newer}</a>
+    ) : (
+      <span style="color:var(--text-faint)">← 更新</span>
+    )}
+    {older ? (
+      <a href={dailyPath(older)}>{older} →</a>
+    ) : (
+      <span style="color:var(--text-faint)">更早 →</span>
+    )}
+  </span>
+</nav>

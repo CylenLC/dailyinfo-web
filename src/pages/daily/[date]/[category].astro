@@ -1,0 +1,23 @@
+---
+import BriefingLayout from '../../../layouts/BriefingLayout.astro';
+import { loadSiteContent } from '../../../lib/content.ts';
+import { CATEGORY_BY_ID } from '../../../lib/categories.ts';
+
+export async function getStaticPaths() {
+  const site = await loadSiteContent();
+  return site.briefings.map((briefing) => ({
+    // Public URL segment is the category slug (ai_news -> ai-news),
+    // never the internal underscore id.
+    params: {
+      date: briefing.data.date,
+      category: CATEGORY_BY_ID[briefing.data.category].slug,
+    },
+    props: { briefingId: briefing.data.id },
+  }));
+}
+
+const { briefingId } = Astro.props;
+const site = await loadSiteContent();
+---
+
+<BriefingLayout site={site} briefingId={briefingId} />

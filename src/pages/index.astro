@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ItemCard from '../components/ItemCard.astro';
+import { CATEGORIES } from '../lib/categories.ts';
+import { briefingPath, dailyPath } from '../lib/urls.ts';
+import { formatDateTime } from '../lib/format.ts';
+import { loadSiteContent } from '../lib/content.ts';
+
+const site = await loadSiteContent();
+const latestDate = site.latestDate;
+const latestBriefings = site.briefingsByDate.get(latestDate) ?? [];
+const recentItems = site.items.slice(0, 12);
+---
+
+<BaseLayout
+  title="DailyInfo — AI for Science Intelligence"
+  description={`DailyInfo 最新科研情报日报（${latestDate || '暂无内容'}）：论文、AI 新闻、代码、资源与 arXiv。`}
+  path="/"
+>
+  <div style="margin-block: 2.5rem 2rem;">
+    <h1 style="font-size:1.9rem;">DailyInfo</h1>
+    <p style="font-size:1.05rem;color:var(--text-soft);margin-bottom:0.4rem;">
+      AI for Science Intelligence
+    </p>
+    <p style="font-size:0.9rem;color:var(--text-faint);">
+      {latestDate
+        ? `最新可用日期：${latestDate} · Last updated：${formatDateTime(site.lastUpdated)}`
+        : '暂无发布内容（fixture 未加载）'}
+    </p>
+  </div>
+
+  <div class="prose">
+    <h2 class="section-title">Latest Daily — {latestDate || '—'}</h2>
+    {latestBriefings.length === 0 && <p class="empty-note">没有可用的日报。</p>}
+    <ul style="list-style:none;padding:0;margin:0 0 1.5rem;">
+      {latestBriefings.map((briefing) => {
+        const category = CATEGORIES.find((c) => c.id === briefing.data.category)!;
+        return (
+          <li style="padding:0.8rem 0;border-bottom:1px solid var(--border);">
+            <a href={briefingPath(latestDate, category.id)} style="font-weight:600;">
+              {category.label}
+            </a>
+            <span style="color:var(--text-faint);font-size:0.85rem;">
+              {' '}· {briefing.data.item_ids.length} 条
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+    {latestDate && (
+      <p>
+        <a href={dailyPath(latestDate)}>{latestDate} 全部日报 →</a>
+      </p>
+    )}
+
+    <h2 class="section-title">Recent Items</h2>
+    {recentItems.map((item) => (
+      <ItemCard item={item} />
+    ))}
+
+    <p style="margin-top:1.5rem;">
+      <a href="/archive/">浏览 Archive →</a>
+      {' · '}
+      <a href="/feed.xml">RSS 订阅</a>
+    </p>
+  </div>
+</BaseLayout>

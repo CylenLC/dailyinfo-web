@@ -1,0 +1,47 @@
+---
+import { SITE } from '../lib/site.ts';
+import ThemeToggle from './ThemeToggle.astro';
+import CategoryNav from './CategoryNav.astro';
+
+interface Props {
+  currentPath?: string;
+}
+const { currentPath } = Astro.props;
+---
+
+<header class="site-header">
+  <div class="container">
+    <div class="site-header__bar">
+      <div class="site-header__brand">
+        <a class="site-header__logo" href="/">{SITE.name}</a>
+        <span class="site-header__tagline">{SITE.tagline}</span>
+      </div>
+      <ThemeToggle />
+    </div>
+    <CategoryNav currentPath={currentPath} />
+  </div>
+</header>
+
+<script>
+  // Manual light/dark toggle; persists the explicit choice to localStorage.
+  function syncLabels() {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.querySelectorAll('[data-theme-label]').forEach((label) => {
+      label.textContent = dark ? '浅色' : '深色';
+    });
+  }
+  syncLabels();
+  document.querySelectorAll('[data-theme-toggle]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const root = document.documentElement;
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try {
+        localStorage.setItem('dailyinfo-theme', next);
+      } catch {
+        /* storage unavailable — theme still applies for this page view */
+      }
+      syncLabels();
+    });
+  });
+</script>

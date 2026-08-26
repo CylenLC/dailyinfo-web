@@ -1,0 +1,101 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import SourceBadge from '../components/SourceBadge.astro';
+import TagList from '../components/TagList.astro';
+import { CATEGORY_BY_ID } from '../lib/categories.ts';
+import { briefingPath, categoryPath, itemPath } from '../lib/urls.ts';
+import { formatDateTime } from '../lib/format.ts';
+import { type SiteContent } from '../lib/content.ts';
+
+interface Props {
+  site: SiteContent;
+  itemId: string;
+}
+const { site, itemId } = Astro.props;
+const item = site.itemsById.get(itemId)!;
+const category = CATEGORY_BY_ID[item.data.category];
+const briefings = item.data.briefing_ids
+  .map((id) => site.briefingsById.get(id)!)
+  .filter(Boolean);
+const updated = item.data.updated_at ?? item.data.published_at;
+---
+
+<BaseLayout
+  title={item.data.title}
+  description={item.data.summary}
+  path={itemPath(item.data.category, item.data.id)}
+  type="article"
+  publishedTime={item.data.published_at}
+  modifiedTime={updated}
+>
+  <article class="prose" style="margin-block: 2rem;">
+    <a class="backlink" href={categoryPath(item.data.category)}>
+      ← {category.label}
+    </a>
+
+    <div class="item-card__meta" style="margin-bottom:0.6rem;">
+      <SourceBadge category={category} />
+      <span>{item.data.source.name}</span>
+    </div>
+
+    <h1>{item.data.title}</h1>
+
+    <dl class="meta-grid">
+      <div>
+        <dt>作者</dt>
+        <dd>
+          {item.data.authors.length > 0 ? item.data.authors.join('、') : '（未提供作者信息）'}
+        </dd>
+      </div>
+      <div>
+        <dt>原始发布时间</dt>
+        <dd>{formatDateTime(item.data.source_published_at)}</dd>
+      </div>
+      <div>
+        <dt>DailyInfo 发布时间</dt>
+        <dd>{formatDateTime(item.data.published_at)}</dd>
+      </div>
+      <div>
+        <dt>更新时间</dt>
+        <dd>{formatDateTime(updated)}</dd>
+      </div>
+    </dl>
+
+    <h2 class="section-title">DailyInfo Summary</h2>
+    <p>{item.data.summary}</p>
+
+    {item.data.why_it_matters && (
+      <>
+        <h2 class="section-title">Why It Matters</h2>
+        <p>{item.data.why_it_matters}</p>
+      </>
+    )}
+
+    <h2 class="section-title">Original Source</h2>
+    <p>
+      本页摘要由 DailyInfo 自动生成，不代表原作者观点。原始内容请以来源为准：<br />
+      <a href={item.data.source.url} rel="noopener noreferrer" style="overflow-wrap:anywhere;">
+        {item.data.source.name}{item.data.source.external_id ? ` · ${item.data.source.external_id}` : ''}
+      </a>
+    </p>
+
+    <h2 class="section-title">Associated Briefing</h2>
+    {briefings.length === 0 && <p class="empty-note">该条目未关联任何日报。</p>}
+    <ul>
+      {briefings.map((briefing) => (
+        <li>
+          <a href={briefingPath(briefing.data.date, briefing.data.category)}>
+            {briefing.data.title}
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <h2 class="section-title">Tags</h2>
+    <TagList tags={item.data.tags} />
+
+    <p style="margin-top:2rem;font-size:0.8rem;color:var(--text-faint);">
+      Stable ID: <code>{item.data.id}</code> · Canonical URL: <code>{itemPath(item.data.category, item.data.id)}</code>
+    </p>
+  </article>
+</BaseLayout>

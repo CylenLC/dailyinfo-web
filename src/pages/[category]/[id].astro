@@ -1,0 +1,29 @@
+---
+import ItemLayout from '../../layouts/ItemLayout.astro';
+import { loadSiteContent } from '../../lib/content.ts';
+import { CATEGORY_BY_ID } from '../../lib/categories.ts';
+
+/**
+ * Item detail route: /{category-slug}/{item-id}/
+ *
+ * The URL is built from the stable item id — never from the title and never
+ * from the markdown filename. The [category] segment is required by the URL
+ * contract but the authoritative category is the one stored on the item;
+ * a mismatch produces no route (404) instead of duplicate content.
+ */
+export async function getStaticPaths() {
+  const site = await loadSiteContent();
+  return site.items.map((item) => ({
+    params: {
+      category: CATEGORY_BY_ID[item.data.category].slug,
+      id: item.data.id,
+    },
+    props: { itemId: item.data.id },
+  }));
+}
+
+const { itemId } = Astro.props;
+const site = await loadSiteContent();
+---
+
+<ItemLayout site={site} itemId={itemId} />

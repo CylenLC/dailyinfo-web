@@ -1,0 +1,14 @@
+---
+import DailyLayout from '../../layouts/DailyLayout.astro';
+import { loadSiteContent } from '../../lib/content.ts';
+
+export async function getStaticPaths() {
+  const site = await loadSiteContent();
+  return site.dates.map((date) => ({ params: { date }, props: { date } }));
+}
+
+const { date } = Astro.props;
+const site = await loadSiteContent();
+---
+
+<DailyLayout site={site} date={date} />

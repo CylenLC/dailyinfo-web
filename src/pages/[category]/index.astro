@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ItemCard from '../../components/ItemCard.astro';
+import { CATEGORIES } from '../../lib/categories.ts';
+import { categoryPath } from '../../lib/urls.ts';
+import { loadSiteContent } from '../../lib/content.ts';
+
+export function getStaticPaths() {
+  return CATEGORIES.map((category) => ({
+    params: { category: category.slug },
+    props: { categoryId: category.id },
+  }));
+}
+
+const { categoryId } = Astro.props;
+const category = CATEGORIES.find((c) => c.id === categoryId)!;
+const site = await loadSiteContent();
+const items = site.itemsByCategory[category.id];
+---
+
+<BaseLayout
+  title={category.label}
+  description={`${category.label} — ${category.description}`}
+  path={categoryPath(category.id)}
+>
+  <div class="prose" style="margin-block: 2rem;">
+    <h1>{category.label}</h1>
+    <p style="color:var(--text-soft);font-size:0.9rem;">{category.description}</p>
+    <p style="color:var(--text-faint);font-size:0.85rem;">
+      {items.length} 条条目 · 按 published_at 倒序
+    </p>
+
+    <h2 class="section-title">Latest</h2>
+    {items.length === 0 && <p class="empty-note">该分类暂无内容。</p>}
+    {items.map((item) => (
+      <ItemCard item={item} showCategory={false} />
+    ))}
+  </div>
+</BaseLayout>

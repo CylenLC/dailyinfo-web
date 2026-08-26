@@ -1,0 +1,74 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import DateNavigation from '../components/DateNavigation.astro';
+import ItemCard from '../components/ItemCard.astro';
+import { CATEGORY_BY_ID } from '../lib/categories.ts';
+import { briefingPath } from '../lib/urls.ts';
+import { formatDateTime } from '../lib/format.ts';
+import { type SiteContent } from '../lib/content.ts';
+
+interface Props {
+  site: SiteContent;
+  date: string;
+}
+const { site, date } = Astro.props;
+const dateBriefings = site.briefingsByDate.get(date) ?? [];
+const dayItems = site.items.filter(
+  (item) => item.data.published_at.slice(0, 10) === date,
+);
+const lastUpdatedOnDate = [...dateBriefings]
+  .map((b) => b.data.updated_at ?? b.data.published_at)
+  .sort()
+  .pop();
+
+const seo = {
+  title: `DailyInfo Daily · ${date}`,
+  description: `DailyInfo ${date} 日报：${dateBriefings
+    .map((b) => CATEGORY_BY_ID[b.data.category].label)
+    .join('、')} 分类共 ${dateBriefings.length} 份日报、${dayItems.length} 条条目。`,
+  path: `/daily/${date}/`,
+};
+---
+
+<BaseLayout {...seo}>
+  <div class="prose" style="margin-block: 2rem;">
+    <h1>{date}</h1>
+    <p style="color:var(--text-soft);font-size:0.9rem;">
+      {dateBriefings.length > 0
+        ? `${dateBriefings.length} 份日报 · ${dayItems.length} 条条目`
+        : '本日无日报'}
+      {lastUpdatedOnDate && ` · 更新于 ${formatDateTime(lastUpdatedOnDate)}`}
+    </p>
+    <DateNavigation dates={site.dates} current={date} />
+
+    <h2 class="section-title">当日分类</h2>
+    {dateBriefings.length === 0 && (
+      <p class="empty-note">本日没有任何分类发布内容。</p>
+    )}
+    <ul style="list-style:none;padding:0;margin:0;">
+      {dateBriefings.map((briefing) => {
+        const category = CATEGORY_BY_ID[briefing.data.category];
+        return (
+          <li style="padding:0.9rem 0;border-bottom:1px solid var(--border);">
+            <a href={briefingPath(date, briefing.data.category)}>
+              <strong style="font-size:1.05rem;">{category.label}</strong>
+              <span style="color:var(--text-faint);font-size:0.85rem;">
+                {' '}· {briefing.data.item_ids.length} 条 · 发布于{' '}
+                {formatDateTime(briefing.data.published_at)}
+              </span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+
+    {dayItems.length > 0 && (
+      <>
+        <h2 class="section-title">当日全部条目</h2>
+        {dayItems.map((item) => (
+          <ItemCard item={item} />
+        ))}
+      </>
+    )}
+  </div>
+</BaseLayout>

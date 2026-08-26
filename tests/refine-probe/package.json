@@ -1,0 +1,6 @@
+{
+  "name": "refine-probe",
+  "private": true,
+  "type": "module",
+  "description": "Minimal Astro project that pins the content-layer validation/cache behavior investigated in W1-001. Run via scripts/contract-tests.mjs — not a publishable site."
+}
