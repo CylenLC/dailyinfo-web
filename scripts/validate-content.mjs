@@ -2,8 +2,8 @@
 /**
  * CLI content validation gate: `npm run validate`
  *
- * Reads all Markdown files under src/content directly from disk (always
- * fresh — no Astro content cache involved) and runs the SHARED validation core from
+ * Reads all Markdown files under the selected content root directly from disk
+ * (always fresh — no Astro content cache involved) and runs the SHARED validation core from
  * src/lib/validate-content.ts, so the CLI gate and the build gate
  * (src/lib/content.ts → loadSiteContent) enforce exactly the same rules.
  *
@@ -23,9 +23,13 @@ import {
 import { CATEGORY_IDS } from '../src/lib/categories.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const fixtureMode = process.argv.includes('--fixtures');
+const contentRoot = fixtureMode
+  ? join(root, 'tests/fixtures/content')
+  : join(root, 'src/content');
 
 async function readCollection(dir) {
-  const base = join(root, 'src/content', dir);
+  const base = join(contentRoot, dir);
   let files;
   try {
     files = await readdir(base, { recursive: true });
@@ -37,7 +41,9 @@ async function readCollection(dir) {
   for (const file of files.filter((f) => String(f).endsWith('.md')).map(String).sort()) {
     const raw = await readFile(join(base, file), 'utf8');
     const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    const label = `${dir}/${file}`;
+    const label = fixtureMode
+      ? `tests/fixtures/content/${dir}/${file}`
+      : `src/content/${dir}/${file}`;
     if (!match) {
       out.push({ label, raw: null });
       continue;
@@ -78,14 +84,16 @@ for (const { label, raw } of briefingFiles) {
 // --- shared integrity validation (same core as astro build) --------------
 const problems = [...schemaProblems, ...validateParsedCollections(items, briefings)];
 
-// --- Phase 1 fixture sanity (CLI-only, not part of the publication contract)
-if (items.length < 10) problems.push(`expected >= 10 fixture items, found ${items.length}`);
-if (briefings.length < 5) problems.push(`expected >= 5 fixture briefings, found ${briefings.length}`);
+// --- Synthetic fixture sanity (CLI-only, not part of the publication contract)
 const itemDates = new Set(items.map((i) => i.data.published_at.slice(0, 10)));
-if (itemDates.size < 2) problems.push(`expected >= 2 distinct dates, found ${[...itemDates]}`);
-const missingCategories = CATEGORY_IDS.filter((id) => !items.some((i) => i.data.category === id));
-if (missingCategories.length) {
-  problems.push(`categories without fixture items: ${missingCategories.join(', ')}`);
+if (fixtureMode) {
+  if (items.length < 10) problems.push(`expected >= 10 fixture items, found ${items.length}`);
+  if (briefings.length < 5) problems.push(`expected >= 5 fixture briefings, found ${briefings.length}`);
+  if (itemDates.size < 2) problems.push(`expected >= 2 distinct fixture dates, found ${[...itemDates]}`);
+  const missingCategories = CATEGORY_IDS.filter((id) => !items.some((i) => i.data.category === id));
+  if (missingCategories.length) {
+    problems.push(`categories without fixture items: ${missingCategories.join(', ')}`);
+  }
 }
 
 if (problems.length > 0) {
@@ -95,6 +103,6 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `✓ content validation passed: ${items.length} items, ${briefings.length} briefings, ` +
-    `${itemDates.size} dates, all categories covered, all references resolve.`,
+  `✓ ${fixtureMode ? 'fixture ' : ''}content validation passed: ${items.length} items, ` +
+    `${briefings.length} briefings, ${itemDates.size} dates, all references resolve.`,
 );

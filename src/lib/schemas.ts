@@ -71,14 +71,14 @@ export const itemSchema = z
       .strict(),
     authors: z.array(z.string().min(1)).default([]),
     /** When the original source published the content. */
-    source_published_at: isoTimestamp,
+    source_published_at: isoTimestamp.nullable(),
     /** When DailyInfo retrieved the source. */
     retrieved_at: isoTimestamp,
     /** When DailyInfo published this Item publicly. */
     published_at: isoTimestamp,
     updated_at: isoTimestamp.optional(),
     summary: z.string().min(1),
-    why_it_matters: z.string().min(1).optional(),
+    why_it_matters: z.string().min(1).nullable().optional(),
     tags: z.array(z.string().min(1)).default([]),
     language: z.enum(['zh-CN', 'en']).default('zh-CN'),
     briefing_ids: z.array(stableId).default([]),

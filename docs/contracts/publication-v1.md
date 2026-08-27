@@ -60,12 +60,12 @@ table below is its semantic contract.
 | `source.url` | ✔ | — | absolute http(s) URL (zod `.url()` + http(s) refinement) |
 | `source.external_id` | ✖ | — | non-empty string when present |
 | `authors` | ✖ | `[]` | list of non-empty strings |
-| `source_published_at` | ✔ | — | ISO 8601 timestamp with timezone |
+| `source_published_at` | ✔ | — | ISO 8601 timestamp with timezone or explicit `null` when the source does not provide a reliable publication time |
 | `retrieved_at` | ✔ | — | ISO 8601 timestamp with timezone |
 | `published_at` | ✔ | — | ISO 8601 timestamp with timezone |
 | `updated_at` | ✖ | falls back to `published_at` | ISO 8601 timestamp with timezone |
 | `summary` | ✔ | — | non-empty; DailyInfo-generated summary |
-| `why_it_matters` | ✖ | — | non-empty when present |
+| `why_it_matters` | ✖ | — | non-empty string or explicit `null` when absent |
 | `tags` | ✖ | `[]` | list of non-empty strings |
 | `language` | ✖ | `zh-CN` | `zh-CN` \| `en` |
 | `briefing_ids` | ✖ | `[]` | stable IDs of briefings including this item |
@@ -269,9 +269,9 @@ Practical consequences:
   `validateSkippedSchemaRules` so `astro build` stays fail-closed even against
   a stale cache.
 
-## 11. Requirements for the dailyinfo WebPublisher (Phase 2)
+## 11. Requirements for the dailyinfo WebPublisher (Phase 2D)
 
-The future WebPublisher in the `dailyinfo` repository writes Publication
+The WebPublisher in the `dailyinfo` repository writes Publication
 content into this repository. Its output **must** satisfy:
 
 1. **Item stable IDs**: globally unique, `^[a-z0-9][a-z0-9._-]*$`, assigned at
@@ -280,8 +280,10 @@ content into this repository. Its output **must** satisfy:
    immutable after first publish** — updating a published Item must preserve
    both.
 3. **schema_version = 1** on every emitted Item and Briefing.
-4. **Valid timestamps**: ISO 8601 with timezone for all `*_at` fields;
-   `YYYY-MM-DD` for briefing `date`.
+4. **Valid timestamps**: ISO 8601 with timezone for all supplied `*_at` fields;
+  `YYYY-MM-DD` for briefing `date`.
+   `source_published_at` may be explicit `null` when the upstream source does
+   not provide a reliable publication time; consumers must not fabricate one.
 5. **Valid source URLs**: absolute http(s) URLs.
 6. **Deterministic Briefing IDs**: `{category}-{date}`; regenerating the same
    (date, category) updates the existing briefing — no `-v2` variants.
@@ -298,12 +300,12 @@ must fix data at the source; the web layer is a verifier, not a healer.
 
 This document freezes the **semantic** publication contract. The current Astro
 storage representation — Markdown files with YAML frontmatter under
-`src/content/items/` and `src/content/briefings/` — is an implementation
+`src/content/items/generated/` and `src/content/briefings/generated/` — is an implementation
 detail:
 
 - A Markdown file is **not** the Item identity and **not** the cross-repo
   contract itself.
-- Phase 2 may switch to `items/*.json` or another representation without
-  changing identity/schema semantics; only the loaders in
-  `src/content.config.ts` would change.
+- Phase 2D may switch to `items/*.json` or another representation without
+ changing identity/schema semantics; only the loaders in
+ `src/content.config.ts` would change.
 - Conversely, renaming a content file changes nothing about identity or URLs.

@@ -37,6 +37,17 @@ function check(name, condition, detail = '') {
   }
 }
 
+const fixtureValidation = spawnSync(
+  process.execPath,
+  [join(repo, 'scripts/validate-content.mjs'), '--fixtures'],
+  { cwd: repo, encoding: 'utf8' },
+);
+check(
+  'synthetic contract fixtures validate outside production content',
+  fixtureValidation.status === 0,
+  fixtureValidation.stderr,
+);
+
 // ---------------------------------------------------------------------------
 // Shared fixtures (fixed dates, demo data only)
 // ---------------------------------------------------------------------------
@@ -83,6 +94,22 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
 
   const base = parseItemFrontmatter(RAW_ITEM, 'items/a.md');
   check('valid fixture item parses', !!base.data, JSON.stringify(base.issues));
+
+  const nullableSourceTime = parseItemFrontmatter(
+    {
+      ...RAW_ITEM,
+      authors: [],
+      tags: [],
+      source_published_at: null,
+      why_it_matters: null,
+    },
+    'items/nullable-source-time.md',
+  );
+  check(
+    'optional source time/significance nulls are Web-compatible',
+    !!nullableSourceTime.data,
+    JSON.stringify(nullableSourceTime.issues),
+  );
 
   // -- Item identity is (category, id); title is NOT an identity input ------
   const retitled = parseItemFrontmatter(

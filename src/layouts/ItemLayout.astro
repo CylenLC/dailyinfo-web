@@ -48,10 +48,12 @@ const updated = item.data.updated_at ?? item.data.published_at;
           {item.data.authors.length > 0 ? item.data.authors.join('、') : '（未提供作者信息）'}
         </dd>
       </div>
-      <div>
-        <dt>原始发布时间</dt>
-        <dd>{formatDateTime(item.data.source_published_at)}</dd>
-      </div>
+      {item.data.source_published_at && (
+        <div>
+          <dt>原始发布时间</dt>
+          <dd>{formatDateTime(item.data.source_published_at)}</dd>
+        </div>
+      )}
       <div>
         <dt>DailyInfo 发布时间</dt>
         <dd>{formatDateTime(item.data.published_at)}</dd>

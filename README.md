@@ -20,7 +20,7 @@ DailyInfo Core
       ↓
 Canonical Publication
       ↓
-WebPublisher（Phase 2）
+WebPublisher（Phase 2D）
       ↓
 dailyinfo-web（本仓库）
       ↓
@@ -29,7 +29,10 @@ Astro Build
 GitHub Pages → cylenlc.github.io/dailyinfo-web/
 ```
 
-**Phase 1 边界**：本仓库目前只消费 fixture/demo 内容（`src/content/`），不接入真实 `dailyinfo` 输出。WebPublisher 跨仓同步属于 Phase 2。即使 DailyInfo 后端完全离线，已部署的历史内容仍可正常访问。
+**Phase 2D 边界**：生产内容只接受 `src/content/items/generated/` 与
+`src/content/briefings/generated/` 下由 DailyInfo WebPublisher 管理的文件。
+合成 demo 内容保留在 `tests/fixtures/content/`，通过
+`npm run validate -- --fixtures` 和契约测试校验，不会混入生产站点。
 
 ## 技术架构
 
@@ -70,7 +73,7 @@ npm run ci         # validate + test + check + build（本地完整把关）
 
 - 当前生产配置使用 `SITE_BASE=/dailyinfo-web`；本地开发请访问 <http://localhost:4321/dailyinfo-web/>。未来切换自定义域名时，将 `SITE_ORIGIN` 改为 `https://daily.iheadwater.org`、`SITE_BASE` 改为 `/`，业务路由和 Item identity 不需要修改。
 
-- **Astro 内容缓存**：内容层解析缓存在 `node_modules/.astro/data-store.json`（按「文件内容摘要」键控，schema 不参与）。**修改 `src/lib/schemas.ts` 后**，未变更的内容文件不会自动重新校验——请运行 `astro build --force`（或删除 `node_modules/.astro`）。CI 不受影响（`npm ci` 全新安装）。
+- **Astro 内容缓存**：契约测试保留缓存行为探针；生产 `npm run build` 使用 `astro build --force`，确保 WebPublisher 新写入或移除的 generated 内容始终按当前文件重新同步和校验。
 - **Telemetry**：Astro 在检测到 CI 环境时自动禁用 telemetry，工作流无需配置。本地正常开发亦无需配置；仅在受限沙箱环境中可 `export ASTRO_TELEMETRY_DISABLED=1`（未写入 npm scripts，避免平台特例污染配置）。
 
 ## Content Model 与契约（已冻结）
@@ -101,7 +104,7 @@ Canonical 定义只在 [`src/lib/categories.ts`](src/lib/categories.ts)：
 
 见 [`src/lib/schemas.ts`](src/lib/schemas.ts)（zod，`.strict()` 拒绝未知字段）。要点：
 
-- Item：`schema_version`（必须为 1）、`id`、`category`、`title`、`source{name,url,external_id?}`、`authors[]`、`source_published_at`、`retrieved_at`、`published_at`、`updated_at?`、`summary`、`why_it_matters?`、`tags[]`、`language`、`briefing_ids[]`
+- Item：`schema_version`（必须为 1）、`id`、`category`、`title`、`source{name,url,external_id?}`、`authors[]`、`source_published_at`（可靠来源时间或显式 `null`）、`retrieved_at`、`published_at`、`updated_at?`、`summary`、`why_it_matters?`（可为显式 `null`）、`tags[]`、`language`、`briefing_ids[]`
 - Briefing：`schema_version`、`id`（必须等于 `{category}-{date}`）、`category`、`date`、`title`、`generated_at`、`published_at`、`updated_at?`、`item_ids[]`，Markdown body 为日报正文
 
 ### URL Contract
@@ -125,18 +128,26 @@ Item URL 只由 `category + id` 决定，标题修改永不改变 URL。
 
 部署配置集中在 [`src/lib/site.ts`](src/lib/site.ts)：当前默认值是 `SITE_ORIGIN=https://cylenlc.github.io`、`SITE_BASE=/dailyinfo-web`；未来只需改为 `SITE_ORIGIN=https://daily.iheadwater.org`、`SITE_BASE=/`。
 
-## Fixture
 
-`src/content/items/` 与 `src/content/briefings/` 下的全部内容为合成 demo 数据，覆盖：2 个日期、5 个分类、17 个 Item、10 个 Briefing、多作者/无作者、多 tags/无 tags、长标题、中英文混合、不同 source。所有条目均为虚构，不复制任何第三方全文。
+## Content ownership and fixtures
+
+`src/content/items/generated/` 与 `src/content/briefings/generated/` 是
+WebPublisher 的唯一生产写入边界。路径、frontmatter 和 Markdown body 均由
+DailyInfo 确定性生成；Web 仓库不从旧的 `briefings/` 或 `pushed/` 目录读取。
+
+合成 demo 数据位于 `tests/fixtures/content/`，覆盖 2 个日期、5 个分类、
+17 个 Item、10 个 Briefing、多作者/无作者、多 tags/无 tags、长标题、中英文
+混合和不同 source。所有条目均为虚构，不复制任何第三方全文。
 
 ## Validation（fail-closed）
 
 共享校验核心 `src/lib/validate-content.ts` 只有一份实现，被两个关卡调用（CLI 与 build 不会漂移）：
 
-1. **`npm run validate`**（`scripts/validate-content.mjs`）— 直接读文件（永远新鲜），执行共享核心：schema 校验、重复稳定 ID、Briefing ID 确定性、briefing ↔ item 双向引用完整性、分类一致性，外加 fixture 覆盖度检查。
-2. **`npm run test`**（`scripts/contract-tests.mjs`）— 契约回归测试：title/category 变化对 URL 与 GUID 的影响、schema 负向用例、integrity 负向用例、以及 `tests/refine-probe` 探针（固化 Astro 内容缓存行为矩阵）。
-3. **`astro check`** — Astro/TypeScript 静态检查。
-4. **`astro build`** — Content Collections schema 校验 + 同一共享核心的 build 侧完整性检查。
+1. **`npm run validate`**（`scripts/validate-content.mjs`）— 直接校验生产生成目录（永远新鲜），执行共享核心：schema 校验、重复稳定 ID、Briefing ID 确定性、briefing ↔ item 双向引用完整性和分类一致性。首次发布前空目录是有效状态。
+2. **`npm run validate -- --fixtures`** — 校验隔离的合成 fixture，并执行覆盖度检查。
+3. **`npm run test`**（`scripts/contract-tests.mjs`）— 契约回归测试：title/category 变化对 URL 与 GUID 的影响、schema 负向用例、integrity 负向用例、可空 source time/significance，以及 `tests/refine-probe` 探针（固化 Astro 内容缓存行为矩阵）。
+4. **`astro check`** — Astro/TypeScript 静态检查。
+5. **`astro build`** — Content Collections schema 校验 + 同一共享核心的 build 侧完整性检查。
 
 校验职责划分（Schema Validator vs Integrity Validator）与 W1-001 根因（Astro 内容缓存在 schema 收紧后不复验未变更条目）详见契约文档 §10。
 
@@ -147,13 +158,19 @@ Item URL 只由 `category + id` 决定，标题修改永不改变 URL。
 
 仓库 Settings → Pages 需选择 **GitHub Actions** 作为部署来源。
 
-## 未来与 DailyInfo 的集成方向（Phase 2）
+## DailyInfo WebPublisher（Phase 2D）
 
 ```text
 dailyinfo
-  → Publication Finalizer（产出 Canonical Publication JSON）
-  → WebPublisher（写入本仓库 src/content/，幂等、按稳定 ID upsert）
-  → dailyinfo-web（本仓库仅负责校验与静态生成）
+  → PublicationStore（Canonical PublicationBundle）
+  → WebPublisher（只写 generated/，按稳定 identity upsert）
+  → npm run validate / test / check / build
+  → dailyinfo-web（静态生成与 GitHub Pages）
 ```
 
-由于 Item 身份与 URL 均由稳定 ID 决定，Phase 2 只需把 Publication JSON 映射为上述 schema 的 Markdown 文件即可，无需重新设计 Web 内容模型。
+WebPublisher 使用持久本地 checkout，发布前要求目标 branch、origin 和
+worktree 符合配置且 clean；随后 fetch/fast-forward、原子写入生成文件、运行
+完整 Web gates，并以 DailyInfo Bot 身份创建一个 briefing 粒度的普通 commit。
+只允许 `git push origin main` 形式的 fast-forward 推送；失败时保留本地
+publisher commit，下一次运行可安全 retry。Web 的 delivery state 位于
+DailyInfo 的 `deliveries/web/`，与 Discord 独立。
