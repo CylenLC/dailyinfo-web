@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/site.ts';
 
 const seo = {
   title: 'Page Not Found',
@@ -13,8 +14,8 @@ const seo = {
     <h1>404 · Page Not Found</h1>
     <p>该页面不存在。你可以：</p>
     <ul>
-      <li><a href="/">返回首页</a>，查看最新日报；</li>
-      <li><a href="/archive/">浏览 Archive</a>，按日期查找历史内容。</li>
+      <li><a href={withBase('/')}>返回首页</a>，查看最新日报；</li>
+      <li><a href={withBase('/archive/')}>浏览 Archive</a>，按日期查找历史内容。</li>
     </ul>
   </div>
 </BaseLayout>

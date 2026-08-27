@@ -26,7 +26,7 @@ export async function GET(context) {
   return rss({
     title: `${SITE.name} · ${category.label}`,
     description: category.description,
-    site: context.site,
+    site: SITE.publicUrl,
     items: site.itemsByCategory[category.id].map((item) => ({
       title: item.data.title,
       link: itemCanonicalUrl(item.data.category, item.data.id),

@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ItemCard from '../../components/ItemCard.astro';
 import { CATEGORIES } from '../../lib/categories.ts';
-import { categoryPath } from '../../lib/urls.ts';
+import { categoryRoute } from '../../lib/urls.ts';
 import { loadSiteContent } from '../../lib/content.ts';
 
 export function getStaticPaths() {
@@ -21,7 +21,7 @@ const items = site.itemsByCategory[category.id];
 <BaseLayout
   title={category.label}
   description={`${category.label} — ${category.description}`}
-  path={categoryPath(category.id)}
+  path={categoryRoute(category.id)}
 >
   <div class="prose" style="margin-block: 2rem;">
     <h1>{category.label}</h1>

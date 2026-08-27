@@ -3,7 +3,8 @@ import BaseLayout from './BaseLayout.astro';
 import SourceBadge from '../components/SourceBadge.astro';
 import TagList from '../components/TagList.astro';
 import { CATEGORY_BY_ID } from '../lib/categories.ts';
-import { briefingPath, categoryPath, itemPath } from '../lib/urls.ts';
+import { briefingRoute, categoryRoute, itemRoute } from '../lib/urls.ts';
+import { withBase, absoluteUrl } from '../lib/site.ts';
 import { formatDateTime } from '../lib/format.ts';
 import { type SiteContent } from '../lib/content.ts';
 
@@ -23,13 +24,13 @@ const updated = item.data.updated_at ?? item.data.published_at;
 <BaseLayout
   title={item.data.title}
   description={item.data.summary}
-  path={itemPath(item.data.category, item.data.id)}
+  path={itemRoute(item.data.category, item.data.id)}
   type="article"
   publishedTime={item.data.published_at}
   modifiedTime={updated}
 >
   <article class="prose" style="margin-block: 2rem;">
-    <a class="backlink" href={categoryPath(item.data.category)}>
+    <a class="backlink" href={withBase(categoryRoute(item.data.category))}>
       ← {category.label}
     </a>
 
@@ -84,7 +85,7 @@ const updated = item.data.updated_at ?? item.data.published_at;
     <ul>
       {briefings.map((briefing) => (
         <li>
-          <a href={briefingPath(briefing.data.date, briefing.data.category)}>
+          <a href={withBase(briefingRoute(briefing.data.date, briefing.data.category))}>
             {briefing.data.title}
           </a>
         </li>
@@ -95,7 +96,7 @@ const updated = item.data.updated_at ?? item.data.published_at;
     <TagList tags={item.data.tags} />
 
     <p style="margin-top:2rem;font-size:0.8rem;color:var(--text-faint);">
-      Stable ID: <code>{item.data.id}</code> · Canonical URL: <code>{itemPath(item.data.category, item.data.id)}</code>
+      Stable ID: <code>{item.data.id}</code> · Canonical URL: <code>{absoluteUrl(itemRoute(item.data.category, item.data.id))}</code>
     </p>
   </article>
 </BaseLayout>

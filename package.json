@@ -10,7 +10,8 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && npm run verify-build",
+    "verify-build": "node scripts/verify-build.mjs",
     "preview": "astro preview",
     "check": "astro check",
     "validate": "node scripts/validate-content.mjs",

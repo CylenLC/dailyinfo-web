@@ -1,5 +1,5 @@
 ---
-import { SITE } from '../lib/site.ts';
+import { SITE, withBase } from '../lib/site.ts';
 import { buildSeo, type SeoInput } from '../lib/seo.ts';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -22,8 +22,13 @@ const seo = buildSeo({ path, ...seoInput });
     <title>{seo.title}</title>
     <meta name="description" content={seo.description} />
     <link rel="canonical" href={seo.canonical} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate" type="application/rss+xml" title={SITE.name} href="/feed.xml" />
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={SITE.name}
+      href={withBase('/feed.xml')}
+    />
     <meta property="og:title" content={seo.ogTitle} />
     <meta property="og:description" content={seo.ogDescription} />
     <meta property="og:url" content={seo.ogUrl} />

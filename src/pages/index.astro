@@ -2,7 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ItemCard from '../components/ItemCard.astro';
 import { CATEGORIES } from '../lib/categories.ts';
-import { briefingPath, dailyPath } from '../lib/urls.ts';
+import { briefingRoute, dailyRoute, archiveRoute, feedRoute } from '../lib/urls.ts';
+import { withBase } from '../lib/site.ts';
 import { formatDateTime } from '../lib/format.ts';
 import { loadSiteContent } from '../lib/content.ts';
 
@@ -37,7 +38,7 @@ const recentItems = site.items.slice(0, 12);
         const category = CATEGORIES.find((c) => c.id === briefing.data.category)!;
         return (
           <li style="padding:0.8rem 0;border-bottom:1px solid var(--border);">
-            <a href={briefingPath(latestDate, category.id)} style="font-weight:600;">
+            <a href={withBase(briefingRoute(latestDate, category.id))} style="font-weight:600;">
               {category.label}
             </a>
             <span style="color:var(--text-faint);font-size:0.85rem;">
@@ -49,7 +50,7 @@ const recentItems = site.items.slice(0, 12);
     </ul>
     {latestDate && (
       <p>
-        <a href={dailyPath(latestDate)}>{latestDate} 全部日报 →</a>
+        <a href={withBase(dailyRoute(latestDate))}>{latestDate} 全部日报 →</a>
       </p>
     )}
 
@@ -59,9 +60,9 @@ const recentItems = site.items.slice(0, 12);
     ))}
 
     <p style="margin-top:1.5rem;">
-      <a href="/archive/">浏览 Archive →</a>
+      <a href={withBase(archiveRoute())}>浏览 Archive →</a>
       {' · '}
-      <a href="/feed.xml">RSS 订阅</a>
+      <a href={withBase(feedRoute())}>RSS 订阅</a>
     </p>
   </div>
 </BaseLayout>

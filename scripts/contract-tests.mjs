@@ -71,6 +71,14 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
 // ===========================================================================
 {
   const { itemCanonicalUrl, itemGuid, briefingId } = await lib('identity.ts');
+  const { SITE, withBase, absoluteUrl } = await lib('site.ts');
+  const {
+    categoryRoute,
+    itemRoute,
+    dailyRoute,
+    briefingRoute,
+    feedRoute,
+  } = await lib('urls.ts');
   const { parseItemFrontmatter } = await lib('validate-content.ts');
 
   const base = parseItemFrontmatter(RAW_ITEM, 'items/a.md');
@@ -108,7 +116,7 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
   check(
     'category mutation ⇒ different canonical URL (identity migration)',
     itemCanonicalUrl('papers', base.data.id) !== migrated &&
-      migrated === 'https://daily.iheadwater.org/code/openreview-example-001/',
+      migrated === 'https://cylenlc.github.io/dailyinfo-web/code/openreview-example-001/',
   );
   check(
     'category mutation ⇒ different RSS GUID',
@@ -130,6 +138,79 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
   check(
     'RSS GUID === canonical Item URL',
     itemGuid('papers', base.data.id) === itemCanonicalUrl('papers', base.data.id),
+  );
+
+  // -- Deployment base is a URL concern, not an identity concern ----------
+  check('current production origin is GitHub Pages', SITE.origin === 'https://cylenlc.github.io');
+  check('current production base is the project-site path', SITE.base === '/dailyinfo-web');
+  check(
+    'logical Item route excludes deployment base',
+    itemRoute('papers', base.data.id) === '/papers/openreview-example-001/',
+  );
+  check(
+    'Item deployment href includes project-site base',
+    withBase(itemRoute('papers', base.data.id)) ===
+      '/dailyinfo-web/papers/openreview-example-001/',
+  );
+  check(
+    'category deployment href includes project-site base',
+    withBase(categoryRoute('papers')) === '/dailyinfo-web/papers/',
+  );
+  check(
+    'Daily deployment href includes project-site base',
+    withBase(dailyRoute('2026-08-26')) === '/dailyinfo-web/daily/2026-08-26/',
+  );
+  check(
+    'Briefing deployment href includes project-site base',
+    withBase(briefingRoute('2026-08-26', 'papers')) ===
+      '/dailyinfo-web/daily/2026-08-26/papers/',
+  );
+  check(
+    'RSS absolute URL includes project-site base',
+    absoluteUrl(feedRoute()) === 'https://cylenlc.github.io/dailyinfo-web/feed.xml',
+  );
+  check(
+    'canonical Item URL includes project-site base',
+    itemCanonicalUrl('papers', base.data.id) ===
+      'https://cylenlc.github.io/dailyinfo-web/papers/openreview-example-001/',
+  );
+
+  // A future custom-domain build changes only deployment config. The route
+  // and item identity remain exactly the same when the base becomes '/'.
+  const siteModule = pathToFileURL(join(repo, 'src/lib/site.ts')).href;
+  const rootDeployment = spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import { SITE, withBase, absoluteUrl } from ${JSON.stringify(siteModule)};\n` +
+        `console.log(JSON.stringify({ origin: SITE.origin, base: SITE.base, publicUrl: SITE.publicUrl, href: withBase('/papers/'), url: absoluteUrl('/papers/') }));`,
+    ],
+    {
+      cwd: repo,
+      env: {
+        ...process.env,
+        SITE_ORIGIN: 'https://daily.iheadwater.org',
+        SITE_BASE: '/',
+      },
+      encoding: 'utf8',
+    },
+  );
+  let rootConfig;
+  try {
+    rootConfig = JSON.parse(rootDeployment.stdout);
+  } catch {
+    rootConfig = null;
+  }
+  check(
+    'future root deployment changes config, not logical routes',
+    rootDeployment.status === 0 &&
+      rootConfig?.origin === 'https://daily.iheadwater.org' &&
+      rootConfig?.base === '' &&
+      rootConfig?.publicUrl === 'https://daily.iheadwater.org/' &&
+      rootConfig?.href === '/papers/' &&
+      rootConfig?.url === 'https://daily.iheadwater.org/papers/',
+    rootDeployment.stderr,
   );
 }
 

@@ -1,6 +1,8 @@
 # dailyinfo-web
 
-DailyInfo 公共 Web 门户 — 基于 [Astro](https://astro.build) 的静态发布站点，部署于 GitHub Pages（`daily.iheadwater.org`）。
+DailyInfo 公共 Web 门户 — 基于 [Astro](https://astro.build) 的静态发布站点。
+
+当前生产地址：<https://cylenlc.github.io/dailyinfo-web/>（GitHub Pages Project Site，base 为 `/dailyinfo-web/`）。未来目标地址为 <https://daily.iheadwater.org/>（根路径 base `/`）。
 
 本仓库**不包含任何后端代码**：没有 Python、数据库、SSR、API Route 或 Serverless。整个站点在构建期从内容文件生成静态 HTML / CSS / XML。
 
@@ -24,7 +26,7 @@ dailyinfo-web（本仓库）
       ↓
 Astro Build
       ↓
-GitHub Pages → daily.iheadwater.org
+GitHub Pages → cylenlc.github.io/dailyinfo-web/
 ```
 
 **Phase 1 边界**：本仓库目前只消费 fixture/demo 内容（`src/content/`），不接入真实 `dailyinfo` 输出。WebPublisher 跨仓同步属于 Phase 2。即使 DailyInfo 后端完全离线，已部署的历史内容仍可正常访问。
@@ -56,7 +58,8 @@ npm run dev        # http://localhost:4321
 npm run validate   # 独立内容校验（fail-closed，CI 第一关）
 npm run test       # 契约回归测试（identity/URL/GUID/integrity + Astro 缓存行为探针）
 npm run check      # astro check（Astro + TypeScript）
-npm run build      # 生产构建到 dist/
+npm run build      # 生产构建到 dist/，并验证生成 artifact 的 base path
+npm run verify-build # 单独验证已存在的 dist/ artifact
 npm run preview    # 本地预览 dist/
 npm run ci         # validate + test + check + build（本地完整把关）
 ```
@@ -64,6 +67,8 @@ npm run ci         # validate + test + check + build（本地完整把关）
 生产构建不需要 Python、数据库、网络 API 或任何 secret。
 
 ### 本地开发注意事项
+
+- 当前生产配置使用 `SITE_BASE=/dailyinfo-web`；本地开发请访问 <http://localhost:4321/dailyinfo-web/>。未来切换自定义域名时，将 `SITE_ORIGIN` 改为 `https://daily.iheadwater.org`、`SITE_BASE` 改为 `/`，业务路由和 Item identity 不需要修改。
 
 - **Astro 内容缓存**：内容层解析缓存在 `node_modules/.astro/data-store.json`（按「文件内容摘要」键控，schema 不参与）。**修改 `src/lib/schemas.ts` 后**，未变更的内容文件不会自动重新校验——请运行 `astro build --force`（或删除 `node_modules/.astro`）。CI 不受影响（`npm ci` 全新安装）。
 - **Telemetry**：Astro 在检测到 CI 环境时自动禁用 telemetry，工作流无需配置。本地正常开发亦无需配置；仅在受限沙箱环境中可 `export ASTRO_TELEMETRY_DISABLED=1`（未写入 npm scripts，避免平台特例污染配置）。
@@ -112,6 +117,14 @@ Canonical 定义只在 [`src/lib/categories.ts`](src/lib/categories.ts)：
 
 Item URL 只由 `category + id` 决定，标题修改永不改变 URL。
 
+部署 URL 分为三层，禁止在业务代码中混用：
+
+- **Logical route**：`/papers/openreview-example-001/`，只表达业务路由和 publication identity。
+- **Browser href**：`/dailyinfo-web/papers/openreview-example-001/`，由 `withBase()` 将当前部署 base 加到 logical route 上。
+- **Absolute public URL**：`https://cylenlc.github.io/dailyinfo-web/papers/openreview-example-001/`，由 `absoluteUrl()` 生成，用于 canonical、`og:url`、RSS link/GUID、robots 和 sitemap。
+
+部署配置集中在 [`src/lib/site.ts`](src/lib/site.ts)：当前默认值是 `SITE_ORIGIN=https://cylenlc.github.io`、`SITE_BASE=/dailyinfo-web`；未来只需改为 `SITE_ORIGIN=https://daily.iheadwater.org`、`SITE_BASE=/`。
+
 ## Fixture
 
 `src/content/items/` 与 `src/content/briefings/` 下的全部内容为合成 demo 数据，覆盖：2 个日期、5 个分类、17 个 Item、10 个 Briefing、多作者/无作者、多 tags/无 tags、长标题、中英文混合、不同 source。所有条目均为虚构，不复制任何第三方全文。
@@ -129,7 +142,7 @@ Item URL 只由 `category + id` 决定，标题修改永不改变 URL。
 
 ## GitHub Pages
 
-`.github/workflows/deploy.yml`（main 分支）：install → validate → test → check → build → `actions/deploy-pages@v4`。
+`.github/workflows/deploy.yml`（main 分支）：在显式的 `SITE_ORIGIN`/`SITE_BASE` 环境下 install → validate → test → check → build（含 dist artifact 验证）→ `actions/deploy-pages@v4`。
 `.github/workflows/validate.yml`（PR）：install → validate → test → check → build。
 
 仓库 Settings → Pages 需选择 **GitHub Actions** 作为部署来源。

@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+env:
+  SITE_ORIGIN: https://cylenlc.github.io
+  SITE_BASE: /dailyinfo-web
+
 jobs:
   validate:
     runs-on: ubuntu-latest

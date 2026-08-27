@@ -12,12 +12,12 @@ import { truncate } from '../lib/format.ts';
  * URL derived from the stable item id (identity.ts guarantees GUID === URL),
  * so it never changes between builds.
  */
-export async function GET(context) {
+export async function GET() {
   const site = await loadSiteContent();
   return rss({
     title: `${SITE.name}`,
     description: SITE.description,
-    site: context.site,
+    site: SITE.publicUrl,
     items: site.items.map((item) => ({
       title: item.data.title,
       link: itemCanonicalUrl(item.data.category, item.data.id),

@@ -1,25 +1,29 @@
 ---
 import { CATEGORIES } from '../lib/categories.ts';
-import { categoryPath } from '../lib/urls.ts';
+import { categoryRoute, archiveRoute } from '../lib/urls.ts';
+import { withBase } from '../lib/site.ts';
 
 interface Props {
-  /** Highlight the category matching this root-relative path (e.g. '/papers/'). */
+  /** Highlight the category matching this logical route (e.g. '/papers/'). */
   currentPath?: string;
 }
 const { currentPath } = Astro.props;
 ---
 
 <nav class="category-nav" aria-label="分类导航">
-  <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>Latest</a>
+  <a href={withBase('/')} aria-current={currentPath === '/' ? 'page' : undefined}>Latest</a>
   {CATEGORIES.map((category) => (
     <a
-      href={categoryPath(category.id)}
-      aria-current={currentPath === categoryPath(category.id) ? 'page' : undefined}
+      href={withBase(categoryRoute(category.id))}
+      aria-current={currentPath === categoryRoute(category.id) ? 'page' : undefined}
     >
       {category.label}
     </a>
   ))}
-  <a href="/archive/" aria-current={currentPath === '/archive/' ? 'page' : undefined}>
+  <a
+    href={withBase(archiveRoute())}
+    aria-current={currentPath === archiveRoute() ? 'page' : undefined}
+  >
     Archive
   </a>
 </nav>

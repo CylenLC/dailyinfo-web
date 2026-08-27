@@ -147,8 +147,20 @@ explicit, deliberate operation (out of scope for v1; no redirect store exists).
 - URL builders live in `src/lib/urls.ts` (paths) and `src/lib/identity.ts`
   (absolute canonical URLs); every page, card, feed and sitemap entry derives
   from these functions — the URL contract is enforced by construction.
-- Production origin `https://daily.iheadwater.org` is defined exactly once in
-  `src/lib/site.ts`.
+- Deployment has three explicit URL layers:
+  - **Logical route**: `/papers/openreview-example-001/`, which never contains
+    the deployment base and is the route/identity layer.
+  - **Browser href**: `/dailyinfo-web/papers/openreview-example-001/`, produced
+    by `withBase(logicalRoute)` for the current GitHub Pages Project Site.
+  - **Absolute public URL**:
+    `https://cylenlc.github.io/dailyinfo-web/papers/openreview-example-001/`,
+    produced by `absoluteUrl(logicalRoute)` for canonical, `og:url`, RSS,
+    robots and sitemap output.
+- Current production deployment is
+  `SITE_ORIGIN=https://cylenlc.github.io` + `SITE_BASE=/dailyinfo-web`,
+  yielding `https://cylenlc.github.io/dailyinfo-web/`. The future custom-domain
+  deployment is `SITE_ORIGIN=https://daily.iheadwater.org` + `SITE_BASE=/`;
+  changing those settings must not change the logical route or Item identity.
 
 ## 7. Briefing ↔ Item Relationship Contract
 
@@ -179,6 +191,15 @@ Consequences:
   mutation is forbidden (§5).
 - GUIDs are constructed in `src/lib/identity.ts` (`itemGuid`), which by
   construction returns the canonical URL.
+
+### Deployment Note
+
+The v1 contract intentionally keeps `RSS GUID = canonical Item URL`, so the
+GUID includes the current deployment origin and base. Before real readers
+subscribe to RSS, complete the final domain migration to
+`https://daily.iheadwater.org/`. If real subscribers already exist when the
+domain changes, RSS GUID compatibility must be designed as a separate
+migration; this deployment fix does not change the v1 RSS contract.
 
 ## 9. Schema Version Contract
 

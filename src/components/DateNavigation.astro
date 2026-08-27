@@ -1,5 +1,6 @@
 ---
-import { dailyPath } from '../lib/urls.ts';
+import { dailyRoute } from '../lib/urls.ts';
+import { withBase } from '../lib/site.ts';
 
 interface Props {
   dates: string[];
@@ -17,12 +18,12 @@ const older = currentIndex >= 0 ? dates[currentIndex + 1] : undefined;
 <nav aria-label="日期导航">
   <span class="meta-row" style="display:inline-flex;gap:1.25rem;font-size:0.85rem;">
     {newer ? (
-      <a href={dailyPath(newer)}>← {newer}</a>
+      <a href={withBase(dailyRoute(newer))}>← {newer}</a>
     ) : (
       <span style="color:var(--text-faint)">← 更新</span>
     )}
     {older ? (
-      <a href={dailyPath(older)}>{older} →</a>
+      <a href={withBase(dailyRoute(older))}>{older} →</a>
     ) : (
       <span style="color:var(--text-faint)">更早 →</span>
     )}

@@ -1,5 +1,5 @@
 ---
-import { SITE } from '../lib/site.ts';
+import { SITE, withBase } from '../lib/site.ts';
 import ThemeToggle from './ThemeToggle.astro';
 import CategoryNav from './CategoryNav.astro';
 
@@ -13,7 +13,7 @@ const { currentPath } = Astro.props;
   <div class="container">
     <div class="site-header__bar">
       <div class="site-header__brand">
-        <a class="site-header__logo" href="/">{SITE.name}</a>
+        <a class="site-header__logo" href={withBase('/')}>{SITE.name}</a>
         <span class="site-header__tagline">{SITE.tagline}</span>
       </div>
       <ThemeToggle />
