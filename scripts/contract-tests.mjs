@@ -91,6 +91,9 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
     feedRoute,
   } = await lib('urls.ts');
   const { parseItemFrontmatter } = await lib('validate-content.ts');
+  const { findRenderedItem } = await import(
+    pathToFileURL(join(repo, 'scripts/verify-build-helpers.mjs')),
+  );
 
   const base = parseItemFrontmatter(RAW_ITEM, 'items/a.md');
   check('valid fixture item parses', !!base.data, JSON.stringify(base.issues));
@@ -109,6 +112,29 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
     'optional source time/significance nulls are Web-compatible',
     !!nullableSourceTime.data,
     JSON.stringify(nullableSourceTime.issues),
+  );
+
+  const largeCollection = Array.from({ length: 20 }, (_, index) => ({
+    category: 'arxiv',
+    id: `arxiv-${String(index + 1).padStart(3, '0')}`,
+  }));
+  const visibleItem = largeCollection[largeCollection.length - 1];
+  const hrefFor = (item) => withBase(itemRoute(item.category, item.id));
+  const homepageWithOneVisibleItem = `<a href="${hrefFor(visibleItem)}">Visible</a>`;
+  const renderedItem = findRenderedItem(
+    largeCollection,
+    homepageWithOneVisibleItem,
+    hrefFor,
+  );
+  check(
+    'large collection does not assume the first content entry is homepage-visible',
+    !homepageWithOneVisibleItem.includes(hrefFor(largeCollection[0])) &&
+      renderedItem.item === visibleItem,
+  );
+  check(
+    'large collection representative href stays under deployment base',
+    renderedItem.href === hrefFor(visibleItem) &&
+      renderedItem.href.startsWith(withBase('/')),
   );
 
   // -- Item identity is (category, id); title is NOT an identity input ------

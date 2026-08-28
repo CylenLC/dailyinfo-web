@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { SITE, absoluteUrl, withBase } from '../src/lib/site.ts';
 import { briefingRoute, dailyRoute, itemRoute } from '../src/lib/urls.ts';
+import { findRenderedItem } from './verify-build-helpers.mjs';
 
 const repo = new URL('..', import.meta.url).pathname;
 const dist = join(repo, 'dist');
@@ -66,27 +67,28 @@ function collectContentData(directory) {
 
 const contentItems = collectContentData(join(repo, 'src/content/items'));
 const contentBriefings = collectContentData(join(repo, 'src/content/briefings'));
-const sampleItem = contentItems[0];
 const sampleBriefing = contentBriefings[0];
+const home = read('index.html');
+const { item: sampleItem, href: itemHref } = findRenderedItem(
+  contentItems,
+  home,
+  (contentItem) => withBase(itemRoute(contentItem.category, contentItem.id)),
+);
 const sampleDate = sampleBriefing?.date ?? '';
 const sampleCategory = sampleBriefing?.category ?? 'papers';
-const sampleItemCategory = sampleItem?.category ?? 'papers';
-const sampleItemId = sampleItem?.id ?? '';
 const sampleItemRoute = sampleItem
-  ? itemRoute(sampleItemCategory, sampleItemId)
+  ? itemRoute(sampleItem.category, sampleItem.id)
   : '';
 const sampleBriefingRoute = sampleBriefing
   ? briefingRoute(sampleDate, sampleCategory)
   : '';
 const sampleDailyRoute = sampleBriefing ? dailyRoute(sampleDate) : '';
 
-const home = read('index.html');
 const papers = read('papers/index.html');
 const daily = sampleBriefing ? read(`${sampleDailyRoute.slice(1)}index.html`) : '';
 const briefing = sampleBriefing ? read(`${sampleBriefingRoute.slice(1)}index.html`) : '';
 const item = sampleItem ? read(`${sampleItemRoute.slice(1)}index.html`) : '';
 const productionRoot = withBase('/');
-const itemHref = sampleItem ? withBase(sampleItemRoute) : '';
 const dailyHref = sampleBriefing ? withBase(sampleDailyRoute) : '';
 const briefingHref = sampleBriefing ? withBase(sampleBriefingRoute) : '';
 const itemUrl = sampleItem ? absoluteUrl(sampleItemRoute) : '';
@@ -145,6 +147,13 @@ if (sampleItem && sampleBriefing) {
   check('Briefing page links to its Daily page', briefing.includes(`href="${dailyHref}"`));
   check('Briefing page links to its Item', briefing.includes(`href="${itemHref}"`));
   check('Item page links to its Briefing', item.includes(`href="${briefingHref}"`));
+} else if (sampleItem) {
+  check(
+    'Item canonical URL uses current public URL',
+    item.includes(`<link rel="canonical" href="${itemUrl}">`),
+  );
+  check('Item og:url uses current public URL', item.includes(`<meta property="og:url" content="${itemUrl}">`));
+  check('Item route artifact exists', item.length > 0);
 } else {
   check(
     'empty production content is a valid pre-first-publication state',
