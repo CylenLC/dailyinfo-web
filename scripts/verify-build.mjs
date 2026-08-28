@@ -67,13 +67,16 @@ function collectContentData(directory) {
 
 const contentItems = collectContentData(join(repo, 'src/content/items'));
 const contentBriefings = collectContentData(join(repo, 'src/content/briefings'));
-const sampleBriefing = contentBriefings[0];
 const home = read('index.html');
 const { item: sampleItem, href: itemHref } = findRenderedItem(
   contentItems,
   home,
   (contentItem) => withBase(itemRoute(contentItem.category, contentItem.id)),
 );
+const sampleBriefing =
+  contentBriefings.find(
+    (briefing) => sampleItem?.briefing_ids?.includes(briefing.id),
+  ) ?? contentBriefings[0];
 const sampleDate = sampleBriefing?.date ?? '';
 const sampleCategory = sampleBriefing?.category ?? 'papers';
 const sampleItemRoute = sampleItem
