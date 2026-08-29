@@ -2,11 +2,11 @@
 import BaseLayout from './BaseLayout.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import SourceBadge from '../components/SourceBadge.astro';
-import TagList from '../components/TagList.astro';
+import ItemProvenance from '../components/ItemProvenance.astro';
 import { CATEGORY_BY_ID } from '../lib/categories.ts';
 import { briefingRoute, categoryRoute, itemRoute, dailyRoute } from '../lib/urls.ts';
 import { withBase, absoluteUrl } from '../lib/site.ts';
-import { formatDateTime } from '../lib/format.ts';
+import { formatDateTime, formatDisplayText, formatEditorialDate } from '../lib/format.ts';
 import { type SiteContent } from '../lib/content.ts';
 
 interface Props {
@@ -20,11 +20,17 @@ const briefings = item.data.briefing_ids
   .map((id) => site.briefingsById.get(id)!)
   .filter(Boolean);
 const updated = item.data.updated_at ?? item.data.published_at;
+const displayTitle = formatDisplayText(item.data.title);
+const displaySummary = formatDisplayText(item.data.summary);
+const displayWhyItMatters = item.data.why_it_matters
+  ? formatDisplayText(item.data.why_it_matters)
+  : undefined;
+const hasLongTitle = [...displayTitle].length > 100;
 ---
 
 <BaseLayout
-  title={item.data.title}
-  description={item.data.summary}
+  title={displayTitle}
+  description={displaySummary}
   path={itemRoute(item.data.category, item.data.id)}
   type="article"
   publishedTime={item.data.published_at}
@@ -35,67 +41,33 @@ const updated = item.data.updated_at ?? item.data.published_at;
       items={[
         { label: 'Home', href: '/' },
         { label: category.label, href: categoryRoute(item.data.category) },
-        { label: item.data.title },
+        { label: displayTitle },
       ]}
     />
 
-    <header class="article-header">
+    <header class:list={['article-header', { 'article-header--long': hasLongTitle }]}>
       <div class="article-header__category"><SourceBadge category={category} /></div>
-      <h1>{item.data.title}</h1>
+      <h1>{displayTitle}</h1>
     </header>
 
-    <section class="article-metadata" aria-label="文章元数据">
-      <dl>
-        <div>
-          <dt>来源</dt>
-          <dd>
-            <a href={item.data.source.url} rel="external noopener noreferrer">
-              {item.data.source.name}<span class="sr-only">（外部链接）</span>
-            </a>
-            {item.data.source.external_id && <code>{item.data.source.external_id}</code>}
-          </dd>
-        </div>
-        {item.data.authors.length > 0 && (
-          <div>
-            <dt>作者</dt>
-            <dd>{item.data.authors.join('、')}</dd>
-          </div>
-        )}
-        {item.data.source_published_at && (
-          <div>
-            <dt>原始发布时间</dt>
-            <dd><time datetime={item.data.source_published_at}>{formatDateTime(item.data.source_published_at)}</time></dd>
-          </div>
-        )}
-        <div>
-          <dt>DailyInfo 收录</dt>
-          <dd><time datetime={item.data.published_at}>{formatDateTime(item.data.published_at)}</time></dd>
-        </div>
-      </dl>
-      {item.data.tags.length > 0 && (
-        <div class="article-metadata__tags">
-          <span>Tags</span>
-          <TagList tags={item.data.tags} />
-        </div>
-      )}
-    </section>
+    <ItemProvenance item={item} />
 
     <div class="article-body">
       <section class="content-panel content-panel--summary" aria-labelledby="summary-title">
-        <p class="eyebrow" id="summary-title">DailyInfo Summary</p>
-        <p>{item.data.summary}</p>
+        <h2 class="eyebrow" id="summary-title">DailyInfo Summary</h2>
+        <p>{displaySummary}</p>
       </section>
 
-      {item.data.why_it_matters && (
+      {displayWhyItMatters && (
         <section class="content-panel content-panel--context" aria-labelledby="why-title">
-          <p class="eyebrow" id="why-title">Why It Matters</p>
-          <p>{item.data.why_it_matters}</p>
+          <h2 class="eyebrow" id="why-title">Why It Matters</h2>
+          <p>{displayWhyItMatters}</p>
         </section>
       )}
 
       <section class="source-cta" aria-labelledby="source-title">
         <div>
-          <p class="eyebrow" id="source-title">Original Source</p>
+          <h2 class="eyebrow" id="source-title">Original Source</h2>
           <p>摘要用于研究导航；结论、版本与引用信息请以原始来源为准。</p>
         </div>
         <a href={item.data.source.url} rel="external noopener noreferrer">
@@ -105,22 +77,30 @@ const updated = item.data.updated_at ?? item.data.published_at;
 
       <section class="related-briefings" aria-labelledby="related-title">
         <div class="section-heading section-heading--compact">
-          <div>
-            <p class="eyebrow">Publication context</p>
-            <h2 id="related-title">关联 Briefing</h2>
-          </div>
+          <h2 id="related-title">In This Edition</h2>
         </div>
+        <p class="publication-indexed">
+          <span>Added to DailyInfo</span>
+          <time datetime={item.data.published_at}>{formatDateTime(item.data.published_at)}</time>
+        </p>
         {briefings.length === 0 && <p class="empty-note">该条目未关联任何日报。</p>}
         <ul>
           {briefings.map((briefing) => (
-            <li>
-              <div>
-                <time datetime={briefing.data.date}>{briefing.data.date}</time>
+            <li data-category={briefing.data.category}>
+              <span class="edition-reference__marker" aria-hidden="true"></span>
+              <div class="edition-reference__main">
+                <p>
+                  <time datetime={briefing.data.date}>{formatEditorialDate(briefing.data.date)}</time>
+                  <span aria-hidden="true">·</span>
+                  <span>{CATEGORY_BY_ID[briefing.data.category].label}</span>
+                </p>
                 <a href={withBase(briefingRoute(briefing.data.date, briefing.data.category))}>
-                  {briefing.data.title}
+                  {CATEGORY_BY_ID[briefing.data.category].label} Briefing
                 </a>
               </div>
-              <a href={withBase(dailyRoute(briefing.data.date))}>Daily Overview</a>
+              <a class="edition-reference__daily" href={withBase(dailyRoute(briefing.data.date))}>
+                Daily Overview <span aria-hidden="true">→</span>
+              </a>
             </li>
           ))}
         </ul>

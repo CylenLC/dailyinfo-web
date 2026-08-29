@@ -4,10 +4,11 @@ import Breadcrumb from '../components/Breadcrumb.astro';
 import DateNavigation from '../components/DateNavigation.astro';
 import ItemCard from '../components/ItemCard.astro';
 import SourceBadge from '../components/SourceBadge.astro';
+import EditionSpine from '../components/EditionSpine.astro';
 import { CATEGORY_BY_ID } from '../lib/categories.ts';
 import { categoryRoute, dailyRoute, briefingRoute } from '../lib/urls.ts';
 import { withBase } from '../lib/site.ts';
-import { formatDateTime } from '../lib/format.ts';
+import { formatEditorialDate } from '../lib/format.ts';
 import { type SiteContent } from '../lib/content.ts';
 import { render } from 'astro:content';
 
@@ -23,6 +24,8 @@ const itemBatches = Array.from({ length: Math.ceil(items.length / 50) }, (_, ind
   start: index * 50,
   items: items.slice(index * 50, (index + 1) * 50),
 }));
+const formatFolio = (start: number, length: number) =>
+  `${String(start + 1).padStart(3, '0')}–${String(start + length).padStart(3, '0')}`;
 
 const { Content } = await render(briefing);
 const updated = briefing.data.updated_at ?? briefing.data.published_at;
@@ -36,11 +39,11 @@ const updated = briefing.data.updated_at ?? briefing.data.published_at;
   publishedTime={briefing.data.published_at}
   modifiedTime={updated}
 >
-  <article class="page-shell briefing-page">
+  <article class="page-shell briefing-page" data-category={category.id}>
     <Breadcrumb
       items={[
         { label: 'Home', href: '/' },
-        { label: briefing.data.date, href: dailyRoute(briefing.data.date) },
+        { label: formatEditorialDate(briefing.data.date), href: dailyRoute(briefing.data.date) },
         { label: `${category.label} Briefing` },
       ]}
     />
@@ -48,14 +51,16 @@ const updated = briefing.data.updated_at ?? briefing.data.published_at;
     <header class="briefing-header" data-category={category.id}>
       <div>
         <SourceBadge category={category} />
-        <p class="briefing-header__date">{briefing.data.date}</p>
         <h1>{category.label} Daily Briefing</h1>
         <p>{briefing.data.title}</p>
       </div>
-      <p class="count-block" aria-label={`${items.length} 条内容`}>
-        <strong>{items.length}</strong>
-        <span>Items</span>
-      </p>
+      <EditionSpine
+        date={briefing.data.date}
+        articles={items.length}
+        sections={1}
+        updatedAt={updated}
+        compact
+      />
     </header>
 
     <div class="briefing-subnav">
@@ -64,13 +69,6 @@ const updated = briefing.data.updated_at ?? briefing.data.published_at;
         <a href={withBase(dailyRoute(briefing.data.date))}>Daily Overview</a>
         <a href={withBase(categoryRoute(briefing.data.category))}>{category.label} Category</a>
       </div>
-    </div>
-
-    <div class="publication-line">
-      <span>发布 <time datetime={briefing.data.published_at}>{formatDateTime(briefing.data.published_at)}</time></span>
-      {briefing.data.updated_at && (
-        <span>更新 <time datetime={briefing.data.updated_at}>{formatDateTime(briefing.data.updated_at)}</time></span>
-      )}
     </div>
 
     <details class="briefing-body" open={items.length <= 40}>
@@ -88,25 +86,27 @@ const updated = briefing.data.updated_at ?? briefing.data.published_at;
 
     <section class="briefing-items" aria-labelledby="items-title">
       <div class="list-toolbar">
-        <div><h2 id="items-title">Structured Items</h2><span>标题、来源与摘要</span></div>
-        <span>{items.length} results</span>
+        <div><h2 id="items-title">Edition Index</h2><span>标题、来源与摘要</span></div>
+        <span>{items.length} articles</span>
       </div>
       {items.length === 0 && <p class="empty-note">本日报无结构化条目。</p>}
 
       {itemBatches.length <= 1 ? (
         <div class="item-list item-list--briefing">
-          {items.map((item) => <ItemCard item={item} showCategory={false} compact />)}
+          {items.map((item) => <ItemCard item={item} showCategory={false} compact showTechnicalId />)}
         </div>
       ) : (
         <div class="item-batches">
           {itemBatches.map((batch, index) => (
             <details class="item-batch" open={index === 0}>
               <summary>
-                <span>Items {batch.start + 1}–{batch.start + batch.items.length}</span>
-                <span>{batch.items.length} 条</span>
+                <span>{formatFolio(batch.start, batch.items.length)}</span>
+                <span>{batch.items.length} Articles</span>
               </summary>
               <div class="item-list item-list--briefing">
-                {batch.items.map((item) => <ItemCard item={item} showCategory={false} compact />)}
+                {batch.items.map((item) => (
+                  <ItemCard item={item} showCategory={false} compact showTechnicalId />
+                ))}
               </div>
             </details>
           ))}

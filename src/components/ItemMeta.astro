@@ -12,6 +12,9 @@ interface Props {
 
 const { item, showCategory = true, showExternalId = false } = Astro.props;
 const category = CATEGORY_BY_ID[item.data.category];
+const listIdentityCategories = new Set(['papers', 'arxiv', 'code']);
+const technicalId =
+  showExternalId && listIdentityCategories.has(category.id) ? item.data.source.external_id : undefined;
 ---
 
 <div class="item-meta">
@@ -25,7 +28,10 @@ const category = CATEGORY_BY_ID[item.data.category];
       </time>
     </>
   )}
-  {showExternalId && item.data.source.external_id && (
-    <code class="item-meta__id">{item.data.source.external_id}</code>
+  {technicalId && (
+    <>
+      <span class="item-meta__separator" aria-hidden="true">·</span>
+      <code class="item-meta__id"><span class="sr-only">Technical ID：</span>{technicalId}</code>
+    </>
   )}
 </div>

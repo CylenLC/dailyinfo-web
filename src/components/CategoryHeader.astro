@@ -7,17 +7,17 @@ interface Props {
   eyebrow?: string;
 }
 
-const { category, count, eyebrow = 'Category' } = Astro.props;
+const { category, count, eyebrow } = Astro.props;
 ---
 
-<header class="page-heading page-heading--category">
+<header class="page-heading page-heading--category" data-category={category.id}>
   <div>
-    <p class="eyebrow">{eyebrow}</p>
+    {eyebrow && <p class="eyebrow">{eyebrow}</p>}
     <h1>{category.label}</h1>
     <p class="page-heading__description">{category.description}</p>
   </div>
   <p class="count-block" aria-label={`${count} 条内容`}>
     <strong>{count}</strong>
-    <span>Items</span>
+    <span>Articles</span>
   </p>
 </header>

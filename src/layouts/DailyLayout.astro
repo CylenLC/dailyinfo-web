@@ -3,10 +3,11 @@ import BaseLayout from './BaseLayout.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import DateNavigation from '../components/DateNavigation.astro';
 import ItemCard from '../components/ItemCard.astro';
+import EditionSpine from '../components/EditionSpine.astro';
 import { CATEGORIES } from '../lib/categories.ts';
 import { briefingRoute, categoryRoute, dailyRoute, archiveRoute } from '../lib/urls.ts';
 import { withBase } from '../lib/site.ts';
-import { formatDateTime } from '../lib/format.ts';
+import { formatEditorialDate } from '../lib/format.ts';
 import { itemsOnDate, type SiteContent } from '../lib/content.ts';
 
 interface Props {
@@ -41,37 +42,34 @@ const seo = {
       items={[
         { label: 'Home', href: '/' },
         { label: 'Archive', href: archiveRoute() },
-        { label: date },
+        { label: formatEditorialDate(date) },
       ]}
     />
 
     <header class="daily-header">
       <div>
-        <p class="eyebrow">Daily Overview</p>
-        <h1>{date}</h1>
-        <p>
+        <EditionSpine
+          date={date}
+          articles={dayItems.length}
+          sections={dateBriefings.length}
+          updatedAt={lastUpdatedOnDate}
+          asHeading
+        />
+        <p class="daily-header__description">
           {dateBriefings.length > 0
             ? `${dateBriefings.length} 个分类简报，汇集当日科研与技术情报。`
             : '本日无分类简报。'}
         </p>
       </div>
-      <div class="daily-header__totals">
-        <span><strong>{dayItems.length}</strong> Items</span>
-        <span><strong>{dateBriefings.length}</strong> Briefings</span>
-      </div>
     </header>
 
     <div class="daily-tools">
       <DateNavigation dates={site.dates} current={date} />
-      {lastUpdatedOnDate && (
-        <time datetime={lastUpdatedOnDate}>最后更新 {formatDateTime(lastUpdatedOnDate)}</time>
-      )}
     </div>
 
     <section class="daily-overview" aria-labelledby="category-overview-title">
       <div class="section-heading section-heading--compact">
         <div>
-          <p class="eyebrow">Category index</p>
           <h2 id="category-overview-title">分类概览</h2>
         </div>
       </div>
@@ -94,7 +92,7 @@ const seo = {
         <section class="daily-category" data-category={category.id} aria-labelledby={`daily-${category.id}`}>
           <header class="daily-category__header">
             <div>
-              <p class="eyebrow">{String(items.length).padStart(2, '0')} Items</p>
+              <p class="daily-category__count">{items.length} Articles</p>
               <h2 id={`daily-${category.id}`}>{category.label}</h2>
               <p>{category.description}</p>
             </div>
