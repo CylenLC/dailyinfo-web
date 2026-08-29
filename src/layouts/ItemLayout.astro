@@ -1,9 +1,10 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
 import SourceBadge from '../components/SourceBadge.astro';
 import TagList from '../components/TagList.astro';
 import { CATEGORY_BY_ID } from '../lib/categories.ts';
-import { briefingRoute, categoryRoute, itemRoute } from '../lib/urls.ts';
+import { briefingRoute, categoryRoute, itemRoute, dailyRoute } from '../lib/urls.ts';
 import { withBase, absoluteUrl } from '../lib/site.ts';
 import { formatDateTime } from '../lib/format.ts';
 import { type SiteContent } from '../lib/content.ts';
@@ -29,76 +30,118 @@ const updated = item.data.updated_at ?? item.data.published_at;
   publishedTime={item.data.published_at}
   modifiedTime={updated}
 >
-  <article class="prose" style="margin-block: 2rem;">
-    <a class="backlink" href={withBase(categoryRoute(item.data.category))}>
-      ← {category.label}
-    </a>
+  <article class="reading-page">
+    <Breadcrumb
+      items={[
+        { label: 'Home', href: '/' },
+        { label: category.label, href: categoryRoute(item.data.category) },
+        { label: item.data.title },
+      ]}
+    />
 
-    <div class="item-card__meta" style="margin-bottom:0.6rem;">
-      <SourceBadge category={category} />
-      <span>{item.data.source.name}</span>
-    </div>
+    <header class="article-header">
+      <div class="article-header__category"><SourceBadge category={category} /></div>
+      <h1>{item.data.title}</h1>
+    </header>
 
-    <h1>{item.data.title}</h1>
-
-    <dl class="meta-grid">
-      <div>
-        <dt>作者</dt>
-        <dd>
-          {item.data.authors.length > 0 ? item.data.authors.join('、') : '（未提供作者信息）'}
-        </dd>
-      </div>
-      {item.data.source_published_at && (
+    <section class="article-metadata" aria-label="文章元数据">
+      <dl>
         <div>
-          <dt>原始发布时间</dt>
-          <dd>{formatDateTime(item.data.source_published_at)}</dd>
+          <dt>来源</dt>
+          <dd>
+            <a href={item.data.source.url} rel="external noopener noreferrer">
+              {item.data.source.name}<span class="sr-only">（外部链接）</span>
+            </a>
+            {item.data.source.external_id && <code>{item.data.source.external_id}</code>}
+          </dd>
+        </div>
+        {item.data.authors.length > 0 && (
+          <div>
+            <dt>作者</dt>
+            <dd>{item.data.authors.join('、')}</dd>
+          </div>
+        )}
+        {item.data.source_published_at && (
+          <div>
+            <dt>原始发布时间</dt>
+            <dd><time datetime={item.data.source_published_at}>{formatDateTime(item.data.source_published_at)}</time></dd>
+          </div>
+        )}
+        <div>
+          <dt>DailyInfo 收录</dt>
+          <dd><time datetime={item.data.published_at}>{formatDateTime(item.data.published_at)}</time></dd>
+        </div>
+      </dl>
+      {item.data.tags.length > 0 && (
+        <div class="article-metadata__tags">
+          <span>Tags</span>
+          <TagList tags={item.data.tags} />
         </div>
       )}
-      <div>
-        <dt>DailyInfo 发布时间</dt>
-        <dd>{formatDateTime(item.data.published_at)}</dd>
-      </div>
-      <div>
-        <dt>更新时间</dt>
-        <dd>{formatDateTime(updated)}</dd>
-      </div>
-    </dl>
+    </section>
 
-    <h2 class="section-title">DailyInfo Summary</h2>
-    <p>{item.data.summary}</p>
+    <div class="article-body">
+      <section class="content-panel content-panel--summary" aria-labelledby="summary-title">
+        <p class="eyebrow" id="summary-title">DailyInfo Summary</p>
+        <p>{item.data.summary}</p>
+      </section>
 
-    {item.data.why_it_matters && (
-      <>
-        <h2 class="section-title">Why It Matters</h2>
-        <p>{item.data.why_it_matters}</p>
-      </>
-    )}
+      {item.data.why_it_matters && (
+        <section class="content-panel content-panel--context" aria-labelledby="why-title">
+          <p class="eyebrow" id="why-title">Why It Matters</p>
+          <p>{item.data.why_it_matters}</p>
+        </section>
+      )}
 
-    <h2 class="section-title">Original Source</h2>
-    <p>
-      本页摘要由 DailyInfo 自动生成，不代表原作者观点。原始内容请以来源为准：<br />
-      <a href={item.data.source.url} rel="noopener noreferrer" style="overflow-wrap:anywhere;">
-        {item.data.source.name}{item.data.source.external_id ? ` · ${item.data.source.external_id}` : ''}
-      </a>
-    </p>
+      <section class="source-cta" aria-labelledby="source-title">
+        <div>
+          <p class="eyebrow" id="source-title">Original Source</p>
+          <p>摘要用于研究导航；结论、版本与引用信息请以原始来源为准。</p>
+        </div>
+        <a href={item.data.source.url} rel="external noopener noreferrer">
+          阅读原文 <span aria-hidden="true">↗</span><span class="sr-only">（外部链接）</span>
+        </a>
+      </section>
 
-    <h2 class="section-title">Associated Briefing</h2>
-    {briefings.length === 0 && <p class="empty-note">该条目未关联任何日报。</p>}
-    <ul>
-      {briefings.map((briefing) => (
-        <li>
-          <a href={withBase(briefingRoute(briefing.data.date, briefing.data.category))}>
-            {briefing.data.title}
+      <section class="related-briefings" aria-labelledby="related-title">
+        <div class="section-heading section-heading--compact">
+          <div>
+            <p class="eyebrow">Publication context</p>
+            <h2 id="related-title">关联 Briefing</h2>
+          </div>
+        </div>
+        {briefings.length === 0 && <p class="empty-note">该条目未关联任何日报。</p>}
+        <ul>
+          {briefings.map((briefing) => (
+            <li>
+              <div>
+                <time datetime={briefing.data.date}>{briefing.data.date}</time>
+                <a href={withBase(briefingRoute(briefing.data.date, briefing.data.category))}>
+                  {briefing.data.title}
+                </a>
+              </div>
+              <a href={withBase(dailyRoute(briefing.data.date))}>Daily Overview</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <nav class="context-navigation" aria-label="内容上下文导航">
+        <a href={withBase(categoryRoute(item.data.category))}>← 返回 {category.label}</a>
+        {briefings[0] && (
+          <a href={withBase(briefingRoute(briefings[0].data.date, briefings[0].data.category))}>
+            返回 Briefing →
           </a>
-        </li>
-      ))}
-    </ul>
+        )}
+      </nav>
 
-    <h2 class="section-title">Tags</h2>
-    <TagList tags={item.data.tags} />
-
-    <p style="margin-top:2rem;font-size:0.8rem;color:var(--text-faint);">
-      Stable ID: <code>{item.data.id}</code> · Canonical URL: <code>{absoluteUrl(itemRoute(item.data.category, item.data.id))}</code>
-    </p>
+      <details class="technical-details">
+        <summary>技术信息</summary>
+        <p>
+          Stable ID: <code>{item.data.id}</code><br />
+          Canonical URL: <code>{absoluteUrl(itemRoute(item.data.category, item.data.id))}</code>
+        </p>
+      </details>
+    </div>
   </article>
 </BaseLayout>
