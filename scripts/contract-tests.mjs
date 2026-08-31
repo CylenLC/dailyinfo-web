@@ -98,6 +98,10 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
   const base = parseItemFrontmatter(RAW_ITEM, 'items/a.md');
   check('valid fixture item parses', !!base.data, JSON.stringify(base.issues));
 
+  const logicalItemPath = itemRoute('papers', base.data.id);
+  const configuredItemHref = `${SITE.base}${logicalItemPath}`;
+  const configuredItemUrl = `${SITE.origin}${configuredItemHref}`;
+
   const nullableSourceTime = parseItemFrontmatter(
     {
       ...RAW_ITEM,
@@ -169,7 +173,7 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
   check(
     'category mutation ⇒ different canonical URL (identity migration)',
     itemCanonicalUrl('papers', base.data.id) !== migrated &&
-      migrated === 'https://cylenlc.github.io/dailyinfo-web/code/openreview-example-001/',
+      migrated === `${SITE.origin}${withBase('/code/openreview-example-001/')}`,
   );
   check(
     'category mutation ⇒ different RSS GUID',
@@ -193,44 +197,50 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
     itemGuid('papers', base.data.id) === itemCanonicalUrl('papers', base.data.id),
   );
 
-  // -- Deployment base is a URL concern, not an identity concern ----------
-  check('current production origin is GitHub Pages', SITE.origin === 'https://cylenlc.github.io');
-  check('current production base is the project-site path', SITE.base === '/dailyinfo-web');
+  // -- Deployment config is a URL concern, not an identity concern ----------
+  // SITE is the single source of truth. These checks validate its shape while
+  // keeping the contract suite portable across project-site and custom-domain
+  // deployments.
+  check('deployment origin is configured', /^https?:\/\/[^/]+$/.test(SITE.origin));
+  check(
+    'deployment base is normalized',
+    SITE.base === '' || (SITE.base.startsWith('/') && !SITE.base.endsWith('/')),
+  );
   check(
     'logical Item route excludes deployment base',
-    itemRoute('papers', base.data.id) === '/papers/openreview-example-001/',
+    logicalItemPath === '/papers/openreview-example-001/' &&
+      (SITE.base === '' || !logicalItemPath.startsWith(SITE.base)),
   );
   check(
-    'Item deployment href includes project-site base',
-    withBase(itemRoute('papers', base.data.id)) ===
-      '/dailyinfo-web/papers/openreview-example-001/',
+    'Item deployment href includes configured base',
+    withBase(logicalItemPath) === configuredItemHref,
   );
   check(
-    'category deployment href includes project-site base',
-    withBase(categoryRoute('papers')) === '/dailyinfo-web/papers/',
+    'category deployment href includes configured base',
+    withBase(categoryRoute('papers')) === `${SITE.base}${categoryRoute('papers')}`,
   );
   check(
-    'Daily deployment href includes project-site base',
-    withBase(dailyRoute('2026-08-26')) === '/dailyinfo-web/daily/2026-08-26/',
+    'Daily deployment href includes configured base',
+    withBase(dailyRoute('2026-08-26')) === `${SITE.base}${dailyRoute('2026-08-26')}`,
   );
   check(
-    'Briefing deployment href includes project-site base',
+    'Briefing deployment href includes configured base',
     withBase(briefingRoute('2026-08-26', 'papers')) ===
-      '/dailyinfo-web/daily/2026-08-26/papers/',
+      `${SITE.base}${briefingRoute('2026-08-26', 'papers')}`,
   );
   check(
-    'RSS absolute URL includes project-site base',
-    absoluteUrl(feedRoute()) === 'https://cylenlc.github.io/dailyinfo-web/feed.xml',
+    'RSS absolute URL includes configured base',
+    absoluteUrl(feedRoute()) === `${SITE.origin}${SITE.base}${feedRoute()}`,
   );
   check(
-    'canonical Item URL includes project-site base',
-    itemCanonicalUrl('papers', base.data.id) ===
-      'https://cylenlc.github.io/dailyinfo-web/papers/openreview-example-001/',
+    'canonical Item URL includes configured origin and base',
+    itemCanonicalUrl('papers', base.data.id) === configuredItemUrl,
   );
 
   // A future custom-domain build changes only deployment config. The route
   // and item identity remain exactly the same when the base becomes '/'.
   const siteModule = pathToFileURL(join(repo, 'src/lib/site.ts')).href;
+  const rootOrigin = 'https://example.test';
   const rootDeployment = spawnSync(
     process.execPath,
     [
@@ -243,7 +253,7 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
       cwd: repo,
       env: {
         ...process.env,
-        SITE_ORIGIN: 'https://daily.iheadwater.org',
+        SITE_ORIGIN: rootOrigin,
         SITE_BASE: '/',
       },
       encoding: 'utf8',
@@ -258,11 +268,11 @@ console.log('\n[1] Identity / URL / RSS GUID contracts');
   check(
     'future root deployment changes config, not logical routes',
     rootDeployment.status === 0 &&
-      rootConfig?.origin === 'https://daily.iheadwater.org' &&
+      rootConfig?.origin === rootOrigin &&
       rootConfig?.base === '' &&
-      rootConfig?.publicUrl === 'https://daily.iheadwater.org/' &&
+      rootConfig?.publicUrl === `${rootOrigin}/` &&
       rootConfig?.href === '/papers/' &&
-      rootConfig?.url === 'https://daily.iheadwater.org/papers/',
+      rootConfig?.url === `${rootOrigin}/papers/`,
     rootDeployment.stderr,
   );
 }
